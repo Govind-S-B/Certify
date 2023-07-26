@@ -38,39 +38,61 @@ def mainScreen(win,selected_row_idx): # View Events
 
         key = win.getch()
 
-        if key == 81 or key == 113: # for quit
+        if key == 81 or key == 113: # Quit
             break
-        elif key == 43: # for Register new event  # Call Register Function , Come Back to main with screen refreshhed with new List
-            print("add")
+        elif key == 43: # Register
+            regEvent(win)
+            items = list(db.events.find({},{"_id":1,"name":1}))
         elif key == curses.KEY_UP and selected_row_idx > 0:
             selected_row_idx -= 1
         elif key == curses.KEY_DOWN and selected_row_idx < len(items)-1:
             selected_row_idx += 1
-        elif key in [curses.KEY_ENTER, 10, 13]: # get the full event details ViewEvent
-            print("go to next screen")
+        elif key in [curses.KEY_ENTER, 10, 13]:
+            viewEvent(win,items[selected_row_idx]["_id"])
 
-def regEvent(event_id):
-    print()
+def regEvent(win):
+    curses.curs_set(True)
+    curses.echo()
+    win.clear()
+    x,y = 0,0
 
-def ViewEvent(event_id):
+    item = {"_id":None,"name":None,"desc":None,"pCounter":0,"issueDt":None}
+
+    win.addstr(y,x,"Event Name : ",curses.color_pair(1))
+    item["name"] = win.getstr().decode("utf-8") 
+    y+=1
+    win.addstr(y,x,"Description : ",curses.color_pair(1))
+    item["desc"] = win.getstr().decode("utf-8")
+    
+    # fetch id first and increment
+    item["_id"] = db.counter.find_one_and_update(
+          {"_id": "event"}, {"$inc":{"seq":1}}
+        )["seq"]
+    
+    db.events.insert_one(item)
+
+    curses.noecho()
+    curses.curs_set(False)
+
+def viewEvent(win,event_id):
     # View Event Details with edit functionality 
     # Show Participant List option below
-    print()
+    raise NotImplementedError
 
-def ViewParticipants(event_id):
+def viewParticipants(event_id):
     # Add Participant [+]
     # Add Via CSV [~]
     # ... Participant List // View Participant with inline value edit functionality
-    print()
+    raise NotImplementedError
 
 def addParticipantCLI():
-    print()
+    raise NotImplementedError
 
 def addParticipantCSV():
-    print()
+    raise NotImplementedError
 
-def ViewParticipant(participant_id):
-    print()
+def viewParticipant(participant_id):
+    raise NotImplementedError
 
 # Main Screen Function
 curses.wrapper(init)
