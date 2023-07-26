@@ -24,8 +24,9 @@ def mainScreen(win,selected_row_idx): # View Events
         win.addstr(y, x,"Quit [q] | Register New [+]",curses.color_pair(1))
         y+=2
 
-        if items == None:
-            win.addstr("No events registered")
+        if items == []:
+            win.addstr(y,x,"No events registered")
+            y+=1
         else:
             for idx, item in enumerate(items):
                 if idx == selected_row_idx:
@@ -56,7 +57,7 @@ def regEvent(win):
     win.clear()
     x,y = 0,0
 
-    item = {"_id":None,"name":None,"desc":None,"pCounter":0,"issueDt":None}
+    item = {"_id":None,"name":None,"desc":None,"pCounter":1,"issueDt":None}
 
     win.addstr(y,x,"Event Name : ",curses.color_pair(1))
     item["name"] = win.getstr().decode("utf-8") 
