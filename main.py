@@ -8,12 +8,15 @@ def init(stdscr):
     curses.curs_set(False)
     stdscr.keypad(True)
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
-    mainScreen(stdscr,0)
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE) # highlight
+    curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK) # selectable fields
+    main_screen(stdscr)
 
-def mainScreen(win,selected_row_idx): # View Events
+def main_screen(win): # View Events
 
-    items = list(db.events.find({},{"_id":1,"name":1}))
+    selected_row_idx = 0 # initially select index
+
+    items = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
 
     while True:
 
@@ -34,7 +37,12 @@ def mainScreen(win,selected_row_idx): # View Events
                     win.addstr(y, x, f"{item['_id']} {item['name']}")
                     win.attroff(curses.color_pair(2))
                 else:
-                    win.addstr(y, x, f"{item['_id']} {item['name']}")
+                    if item["issueDt"] == None:
+                        win.attron(curses.color_pair(3))
+                        win.addstr(y, x, f"{item['_id']} {item['name']}")
+                        win.attroff(curses.color_pair(3))
+                    else:
+                        win.addstr(y, x, f"{item['_id']} {item['name']}")
                 y += 1
 
         key = win.getch()
@@ -42,43 +50,72 @@ def mainScreen(win,selected_row_idx): # View Events
         if key == 81 or key == 113: # Quit
             break
         elif key == 43: # Register
-            regEvent(win)
-            items = list(db.events.find({},{"_id":1,"name":1}))
+            reg_event(win)
+            items = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
         elif key == curses.KEY_UP and selected_row_idx > 0:
             selected_row_idx -= 1
         elif key == curses.KEY_DOWN and selected_row_idx < len(items)-1:
             selected_row_idx += 1
-        elif key in [curses.KEY_ENTER, 10, 13]:
-            viewEvent(win,items[selected_row_idx]["_id"])
+        elif key in [curses.KEY_ENTER, 10, 13]: # View Event
+            view_event(win,items[selected_row_idx]["_id"])
+            items = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
 
-def regEvent(win):
+def reg_event(win):
     curses.curs_set(True)
     curses.echo()
     win.clear()
     x,y = 0,0
 
-    item = {"_id":None,"name":None,"desc":None,"pCounter":1,"issueDt":None}
+    item = {"name":None,"desc":None,"issueDt":None,"fields":["_id","name"]}
 
     win.addstr(y,x,"Event Name : ",curses.color_pair(1))
     item["name"] = win.getstr().decode("utf-8") 
     y+=1
     win.addstr(y,x,"Description : ",curses.color_pair(1))
     item["desc"] = win.getstr().decode("utf-8")
-    
-    # fetch id first and increment
-    item["_id"] = db.counter.find_one_and_update(
-          {"_id": "event"}, {"$inc":{"seq":1}}
-        )["seq"]
-    
+    y+=1
+
+    win.addstr(y,x,"Fields : ",curses.color_pair(1))
+    item["fields"].extend(win.getstr().decode("utf-8").split())
+    y+=1
+
     db.events.insert_one(item)
 
     curses.noecho()
     curses.curs_set(False)
 
-def viewEvent(win,event_id):
+def view_event(win,event_id):
     # View Event Details with edit functionality 
     # Show Participant List option below
-    raise NotImplementedError
+    
+    win.clear()
+    x,y = 0,0
+    item = db.events.find_one({"_id":event_id})
+
+    if item["issueDt"] == None:
+        win.attron(curses.color_pair(3))
+        win.addstr(y, x, f"[MODIFIABLE] [F to Finalize]")
+        win.attroff(curses.color_pair(3))
+    else:
+        win.addstr(y, x, f"[FINALIZED]")
+
+    y+=2
+
+    win.addstr(y,x,f"ID : {item['_id']}",curses.color_pair(1))
+    y+=1
+    win.addstr(y,x,f"Event Name : {item['name']}",curses.color_pair(1))
+    y+=1
+    win.addstr(y,x,f"Description : {item['desc']}",curses.color_pair(1))
+    y+=1
+    win.addstr(y,x,f"Issue Date : {item['issueDt']}",curses.color_pair(1))
+    y+=1
+    win.addstr(y,x,f"Participant Fields : {item['desc']}",curses.color_pair(1))
+    y+=2
+
+    win.addstr(y,x,f"Show Participants",curses.color_pair(1))
+    y+=1
+
+    win.getch()
 
 def viewParticipants(event_id):
     # Add Participant [+]
@@ -90,6 +127,7 @@ def addParticipantCLI():
     raise NotImplementedError
 
 def addParticipantCSV():
+    # https://docs.python.org/3/library/csv.html#csv.DictReader
     raise NotImplementedError
 
 def viewParticipant(participant_id):
