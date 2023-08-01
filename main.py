@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import curses
 from datetime import datetime
+import csv
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client.certify
@@ -237,7 +238,28 @@ def addParticipantCLI(win, event_id):
     curses.curs_set(False)
 
 
-def addParticipantCSV():
+def addParticipantCSV(win,event_id):
+    curses.curs_set(True)
+    curses.echo()
+    win.clear()
+    x,y = 0,0
+
+    # enter csv name
+    win.addstr(y,x,"Event Name : ",curses.color_pair(1))
+    csv_name = win.getstr().decode("utf-8") 
+    y+=1
+
+    with open(csv_name, newline='') as csvfile: # possible error where header names dont match up , use value inside fields to cross check
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            row["event_id"] = event_id
+
+    
+    
+    # make list of elements to add
+
+    # make add multiple query
+
     # https://docs.python.org/3/library/csv.html#csv.DictReader
     raise NotImplementedError
 
