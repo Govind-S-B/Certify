@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 import curses
+from datetime import datetime
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client.certify
@@ -24,7 +25,7 @@ def main_screen(win): # View Events
         x , y = 0,0
         win.addstr(y,x,"== Certify CLI V1 ==",curses.color_pair(1))
         y+=1
-        win.addstr(y, x,"Quit [q] | Register New [+]",curses.color_pair(1))
+        win.addstr(y, x,"Quit [Q] | Register New [+]",curses.color_pair(1))
         y+=2
 
         if items == []:
@@ -87,39 +88,88 @@ def reg_event(win):
 def view_event(win,event_id):
     # View Event Details with edit functionality 
     # Show Participant List option below
+
+    db_result = db.events.find_one({"_id":event_id})
     
-    win.clear()
-    x,y = 0,0
-    item = db.events.find_one({"_id":event_id})
+    selected_index = 0
 
-    finalized = True if (item["issueDt"] == None) else False
-
-    if finalized:
-        win.attron(curses.color_pair(3))
-        win.addstr(y, x, f"[MODIFIABLE] [F to Finalize]")
-        win.attroff(curses.color_pair(3))
-    else:
-        win.addstr(y, x, f"[FINALIZED]")
-
-    y+=2
-
-    win.addstr(y,x,f"ID : {item['_id']}",curses.color_pair(1))
-    y+=1
-    win.addstr(y,x,f"Event Name : {item['name']}",curses.color_pair(1))
-    y+=1
-    win.addstr(y,x,f"Description : {item['desc']}",curses.color_pair(1))
-    y+=1
-    win.addstr(y,x,f"Issue Date : {item['issueDt']}",curses.color_pair(1))
-    y+=1
-    win.addstr(y,x,f"Participant Fields : {item['fields']}",curses.color_pair(1))
-    y+=2
-
-    win.addstr(y,x,f"Show Participants",curses.color_pair(1))
-    y+=1
-
-    win.getch()
+    # Field_Content , Selectable or Not , field name (used for editing and updationg)
+    menu_items = [  [f"ID : {db_result['_id']}",False],
+                    [f"Event Name : {db_result['name']}",True,'name'],
+                    [f"Description : {db_result['desc']}",True,'desc'],
+                    [f"Issue Date : {db_result['issueDt']}",False],
+                    [f"Participant Fields : {db_result['fields']}",True,'fields'],]
     
-    # viewParticipants(event_id,finalized)
+    finalized = False if (db_result['issueDt'] == None) else True
+    
+    while True:
+        win.clear()
+        x,y = 0,0
+
+        if not finalized:
+            win.addstr(y, x, f"[MODIFIABLE] [F to Finalize]",curses.color_pair(3))
+            y+=2
+
+            for idx, item in enumerate(menu_items):
+                if idx == selected_index  :
+                    win.addstr(y, x, item[0],curses.color_pair(2))
+                else:
+                    if item[1]: #check if editable field
+                        win.addstr(y, x, item[0],curses.color_pair(3))
+                    else:
+                        win.addstr(y, x, item[0])
+                y += 1
+            y+=1
+        else:
+            win.addstr(y, x, f"[FINALIZED]")
+            y+=2
+
+            for item in menu_items:
+                win.addstr(y, x, item[0])
+                y += 1
+            y+=1
+
+        win.addstr(y,x,f"Show Participants [S] ")
+        y+=1
+
+        key = win.getch()
+
+        if key == 81 or key == 113: # Quit
+            break
+        elif key == 70 or key == 102: # Finalise
+            db.events.update_one({"_id":event_id},{ "$set": { "issueDt": datetime.now() } } )
+            finalized = True
+            db_result = db.events.find_one({"_id":event_id})  # possibility of this being executed before update
+            menu_items = [  [f"ID : {db_result['_id']}",False],
+                            [f"Event Name : {db_result['name']}",True],
+                            [f"Description : {db_result['desc']}",True],
+                            [f"Issue Date : {db_result['issueDt']}",False],
+                            [f"Participant Fields : {db_result['fields']}",True],]
+
+        elif key == 83 or key == 115: # View Participants
+            viewParticipants(event_id,finalized)
+        elif key == curses.KEY_UP and selected_index > 0:
+            selected_index -= 1
+        elif key == curses.KEY_DOWN and selected_index < len(menu_items)-1:
+            selected_index += 1
+        elif key in [curses.KEY_ENTER, 10, 13]: # Edit Field
+            if not finalized:
+                if menu_items[selected_index][1]: # if editable
+                    # enter new field value and update
+                    y+=2
+                    win.addstr(y,x,"Enter New Value : ",curses.color_pair(2))
+                    curses.echo()
+                    val = win.getstr().decode("utf-8")
+                    curses.noecho()
+                    db.events.update_one({"_id":event_id},{ "$set": { menu_items[selected_index][2] : val } } )
+                    db_result = db.events.find_one({"_id":event_id})  # possibility of this being executed before update
+                    menu_items = [  [f"ID : {db_result['_id']}",False],
+                                    [f"Event Name : {db_result['name']}",True],
+                                    [f"Description : {db_result['desc']}",True],
+                                    [f"Issue Date : {db_result['issueDt']}",False],
+                                    [f"Participant Fields : {db_result['fields']}",True],]
+
+
 
 def viewParticipants(event_id,finalized):
     # Add Participant [+]
