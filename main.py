@@ -201,6 +201,9 @@ def viewParticipants(win, event_id, finalized):
         elif key == 43: # Register
             addParticipantCLI(win, event_id)
             participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+        elif key == 126 : # Register
+            addParticipantCSV(win, event_id)
+            participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
         elif key == curses.KEY_UP and selected_row_idx > 0:
             selected_row_idx -= 1
         elif key == curses.KEY_DOWN and selected_row_idx < len(participants_list)-1:
@@ -240,15 +243,17 @@ def addParticipantCSV(win,event_id):
     win.clear()
     x,y = 0,0
 
-    win.addstr(y,x,"Event Name : ",curses.color_pair(1))
+    win.addstr(y,x,"Enter CSV Name : ",curses.color_pair(1))
     csv_name = win.getstr().decode("utf-8") 
     y+=1
 
     curses.curs_set(False)
     curses.noecho()
 
+    reader = []
+
     with open(csv_name, newline='') as csvfile: # possible error where header names dont match up , use value inside fields to cross check
-        reader = csv.DictReader(csvfile)
+        reader = list(csv.DictReader(csvfile))
         for row in reader:
             row["event_id"] = event_id
 
@@ -323,10 +328,5 @@ def viewParticipant(win, participant_id, finalized):
                         else:
                             menu_items.append([f"{field} : {value}", True, f"{field}"])
 
-
-
 # Main Screen Function
 curses.wrapper(init)
-
-# In Line Edit Functionality
-# Hover over the line to edit and Ctrl E to edit , allows editing only the editable parts
