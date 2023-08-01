@@ -16,7 +16,7 @@ def main_screen(win): # View Events
 
     selected_row_idx = 0 # initially select index
 
-    items = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
+    events_list = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
 
     while True:
 
@@ -24,14 +24,14 @@ def main_screen(win): # View Events
         x , y = 0,0
         win.addstr(y,x,"== Certify CLI V1 ==",curses.color_pair(1))
         y+=1
-        win.addstr(y, x,"Quit [q] | Register New [+]",curses.color_pair(1))
+        win.addstr(y, x,"Quit [q] | Register New Event [+]",curses.color_pair(1))
         y+=2
 
-        if items == []:
+        if events_list == []:
             win.addstr(y,x,"No events registered")
             y+=1
         else:
-            for idx, item in enumerate(items):
+            for idx, item in enumerate(events_list):
                 if idx == selected_row_idx:
                     win.attron(curses.color_pair(2))
                     win.addstr(y, x, f"{item['_id']} {item['name']}")
@@ -51,14 +51,14 @@ def main_screen(win): # View Events
             break
         elif key == 43: # Register
             reg_event(win)
-            items = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
+            events_list = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
         elif key == curses.KEY_UP and selected_row_idx > 0:
             selected_row_idx -= 1
-        elif key == curses.KEY_DOWN and selected_row_idx < len(items)-1:
+        elif key == curses.KEY_DOWN and selected_row_idx < len(events_list)-1:
             selected_row_idx += 1
         elif key in [curses.KEY_ENTER, 10, 13]: # View Event
-            view_event(win,items[selected_row_idx]["_id"])
-            items = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
+            view_event(win,events_list[selected_row_idx]["_id"])
+            events_list = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
 
 def reg_event(win):
     curses.curs_set(True)
