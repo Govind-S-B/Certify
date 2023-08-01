@@ -37,7 +37,7 @@ def main_screen(win): # View Events
                     win.addstr(y, x, f"{item['_id']} {item['name']}")
                     win.attroff(curses.color_pair(2))
                 else:
-                    if item["issueDt"] == None:
+                    if item["issueDt"] == None: # check finalized
                         win.attron(curses.color_pair(3))
                         win.addstr(y, x, f"{item['_id']} {item['name']}")
                         win.attroff(curses.color_pair(3))
@@ -92,7 +92,9 @@ def view_event(win,event_id):
     x,y = 0,0
     item = db.events.find_one({"_id":event_id})
 
-    if item["issueDt"] == None:
+    finalized = True if (item["issueDt"] == None) else False
+
+    if finalized:
         win.attron(curses.color_pair(3))
         win.addstr(y, x, f"[MODIFIABLE] [F to Finalize]")
         win.attroff(curses.color_pair(3))
@@ -109,15 +111,17 @@ def view_event(win,event_id):
     y+=1
     win.addstr(y,x,f"Issue Date : {item['issueDt']}",curses.color_pair(1))
     y+=1
-    win.addstr(y,x,f"Participant Fields : {item['desc']}",curses.color_pair(1))
+    win.addstr(y,x,f"Participant Fields : {item['fields']}",curses.color_pair(1))
     y+=2
 
     win.addstr(y,x,f"Show Participants",curses.color_pair(1))
     y+=1
 
     win.getch()
+    
+    # viewParticipants(event_id,finalized)
 
-def viewParticipants(event_id):
+def viewParticipants(event_id,finalized):
     # Add Participant [+]
     # Add Via CSV [~]
     # ... Participant List // View Participant with inline value edit functionality
