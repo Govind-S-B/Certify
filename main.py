@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import curses
 from datetime import datetime
+import csv
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client.certify
@@ -62,7 +63,7 @@ def reg_event(win):
     win.clear()
     x,y = 0,0
 
-    item = {"name":None,"desc":None,"issueDt":None,"fields":["_id","name"]}
+    item = {"name":None,"desc":None,"issueDt":None,"fields":[]}
 
     win.addstr(y,x,"Event Name : ",curses.color_pair(1))
     item["name"] = win.getstr().decode("utf-8") 
@@ -142,7 +143,7 @@ def view_event(win,event_id):
                             [f"Participant Fields : {db_result['fields']}",True],]
 
         elif key == 83 or key == 115: # View Participants
-            viewParticipants(event_id,finalized)
+            viewParticipants(win,event_id,finalized)
         elif key == curses.KEY_UP and selected_index > 0:
             selected_index -= 1
         elif key == curses.KEY_DOWN and selected_index < len(menu_items)-1:
@@ -238,7 +239,28 @@ def addParticipantCLI(win, event_id):
     curses.curs_set(False)
 
 
-def addParticipantCSV():
+def addParticipantCSV(win,event_id):
+    curses.curs_set(True)
+    curses.echo()
+    win.clear()
+    x,y = 0,0
+
+    # enter csv name
+    win.addstr(y,x,"Event Name : ",curses.color_pair(1))
+    csv_name = win.getstr().decode("utf-8") 
+    y+=1
+
+    with open(csv_name, newline='') as csvfile: # possible error where header names dont match up , use value inside fields to cross check
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            row["event_id"] = event_id
+
+    
+    
+    # make list of elements to add
+
+    # make add multiple query
+
     # https://docs.python.org/3/library/csv.html#csv.DictReader
     raise NotImplementedError
 
