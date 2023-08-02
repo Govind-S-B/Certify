@@ -138,10 +138,17 @@ def view_event(win, event_id):
         if key == 81 or key == 113: # Quit
             break
         elif key == 70 or key == 102: # Finalise
-            t = datetime.now()
-            db.events.update_one({"_id":event_id},{ "$set": { "issueDt": t } } )
-            finalized = True
-            menu_items[3][0] = f"Issue Date : {t}"
+            if not finalized:
+                y+=1
+                win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                curses.echo()
+                val = win.getstr().decode("utf-8")
+                curses.noecho()
+                if val.lower() == "y":
+                    t = datetime.now()
+                    db.events.update_one({"_id":event_id},{ "$set": { "issueDt": t } } )
+                    finalized = True
+                    menu_items[3][0] = f"Issue Date : {t}"
 
         elif key == 83 or key == 115: # View Participants
             viewParticipants(win, event_id, finalized)
