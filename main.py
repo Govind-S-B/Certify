@@ -190,14 +190,13 @@ def viewParticipants(win, event_id, finalized):
     # ... Participant List // View Participant with inline value edit functionality
 
     participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-    # print(participants_list)
     selected_row_idx = 0 # initially select index
 
     while True:
         win.clear()
         x,y = 0,0
         if not finalized:
-            win.addstr(y, x,"Add Participant [+] | Add Via CSV [~]",curses.color_pair(1))
+            win.addstr(y, x,"Add Participant [+] | Add Via CSV [~] | Delete All Participants [D] | Go Back [Q]",curses.color_pair(1))
             y+=2
         else:
             win.addstr(y, x,"[FINALIZED]", curses.color_pair(1))
@@ -234,8 +233,20 @@ def viewParticipants(win, event_id, finalized):
         elif key in [curses.KEY_ENTER, 10, 13]: # View Event
             viewParticipant(win, participants_list[selected_row_idx]["_id"], finalized)
             participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-        else:
-            continue
+            if selected_row_idx >= len(participants_list):
+                selected_row_idx -= 1 # to move the highlight up by one row after deletion
+        elif key in [68, 100]:
+            if not finalized:
+                win.clear()
+                x,y = 0,0
+                win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                curses.echo()
+                val = win.getstr().decode("utf-8")
+                curses.noecho()
+                if val.lower() == "y":
+                    db.participants.delete_many({"event_id" : event_id})
+                participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+                selected_row_idx = 0
 
 def addParticipantCLI(win, event_id):
     curses.curs_set(True)
@@ -294,14 +305,13 @@ def viewParticipant(win, participant_id, finalized):
             menu_items.append([f"{field} : {value}", False]) # IDs are not editable
         else:
             menu_items.append([f"{field} : {value}", True, f"{field}"])
-    # print(menu_items)
 
     while True:
         win.clear()
         x,y = 0,0
 
         if not finalized:
-            win.addstr(y, x, f"[MODIFIABLE]", curses.color_pair(3))
+            win.addstr(y, x, f"[MODIFIABLE] | Delete Participant [D] | Go Back [Q]", curses.color_pair(1))
             y+=2
 
             for idx, item in enumerate(menu_items):
@@ -315,7 +325,7 @@ def viewParticipant(win, participant_id, finalized):
                 y += 1
             y+=1
         else:
-            win.addstr(y, x, f"[FINALIZED]", curses.color_pair(1))
+            win.addstr(y, x, f"[FINALIZED] | Go Back [Q]", curses.color_pair(1))
             y+=2
 
             for item in menu_items:
@@ -350,6 +360,17 @@ def viewParticipant(win, participant_id, finalized):
                             menu_items.append([f"{field} : {value}", False]) # IDs not editable
                         else:
                             menu_items.append([f"{field} : {value}", True, f"{field}"])
+        elif key in [68,100]:
+            if not finalized:
+                win.clear()
+                x,y = 0,0
+                win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                curses.echo()
+                val = win.getstr().decode("utf-8")
+                curses.noecho()
+                if val.lower() == "y":
+                    db.participants.delete_one({"_id" : participant_id})
+                    break
 
 # Main Screen Function
 curses.wrapper(init)
