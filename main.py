@@ -56,6 +56,8 @@ def main_screen(win): # View Events
         elif key in [curses.KEY_ENTER, 10, 13]: # View Event
             view_event(win,events_list[selected_row_idx]["_id"])
             events_list = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
+            if selected_row_idx >= len(events_list):
+                selected_row_idx -= 1 # to move the highlight up by one row after deletion
 
 def reg_event(win):
     curses.curs_set(True)
@@ -125,8 +127,11 @@ def view_event(win, event_id):
                 y += 1
             y+=1
 
-        win.addstr(y,x,f"Show Participants [S]", curses.color_pair(3))
+        win.addstr(y,x,f"Show Participants [S]", curses.color_pair(1))
         y+=1
+        if not finalized:
+            win.addstr(y,x,f"Delete Event [D]", curses.color_pair(1))
+            y+=1
 
         key = win.getch()
 
@@ -164,6 +169,17 @@ def view_event(win, event_id):
                                     [f"Description : {db_result['desc']}",True],
                                     [f"Issue Date : {db_result['issueDt']}",False],
                                     [f"Participant Fields : {db_result['fields']}",True],]
+        elif key in [100, 68]:
+            if not finalized:
+                y+=1
+                win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                curses.echo()
+                val = win.getstr().decode("utf-8")
+                curses.noecho()
+                if val.lower() == "y":
+                    db.events.delete_one({"_id" : event_id})
+                    db.participants.delete_many({"event_id" : event_id})
+                    break
 
 
 
