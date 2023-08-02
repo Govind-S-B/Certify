@@ -138,14 +138,10 @@ def view_event(win, event_id):
         if key == 81 or key == 113: # Quit
             break
         elif key == 70 or key == 102: # Finalise
-            db.events.update_one({"_id":event_id},{ "$set": { "issueDt": datetime.now() } } )
+            t = datetime.now()
+            db.events.update_one({"_id":event_id},{ "$set": { "issueDt": t } } )
             finalized = True
-            db_result = db.events.find_one({"_id":event_id})  # possibility of this being executed before update
-            menu_items = [  [f"ID : {db_result['_id']}",False],
-                            [f"Event Name : {db_result['name']}",True],
-                            [f"Description : {db_result['desc']}",True],
-                            [f"Issue Date : {db_result['issueDt']}",False],
-                            [f"Participant Fields : {db_result['fields']}",True],]
+            menu_items[3][0] = f"Issue Date : {t}"
 
         elif key == 83 or key == 115: # View Participants
             viewParticipants(win, event_id, finalized)
@@ -165,21 +161,10 @@ def view_event(win, event_id):
                     db.events.update_one({"_id":event_id},{ "$set": { menu_items[selected_index][2] : val } } )
                     db_result = db.events.find_one({"_id":event_id})  # possibility of this being executed before update
                     menu_items = [  [f"ID : {db_result['_id']}",False],
-                                    [f"Event Name : {db_result['name']}",True],
-                                    [f"Description : {db_result['desc']}",True],
+                                    [f"Event Name : {db_result['name']}",True,'name'],
+                                    [f"Description : {db_result['desc']}",True,'desc'],
                                     [f"Issue Date : {db_result['issueDt']}",False],
                                     [f"Participant Fields : {db_result['fields']}",True],]
-        elif key in [100, 68]:
-            if not finalized:
-                y+=1
-                win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
-                curses.echo()
-                val = win.getstr().decode("utf-8")
-                curses.noecho()
-                if val.lower() == "y":
-                    db.events.delete_one({"_id" : event_id})
-                    db.participants.delete_many({"event_id" : event_id})
-                    break
 
 
 
@@ -221,6 +206,9 @@ def viewParticipants(win, event_id, finalized):
         elif key == 43: # Register
             addParticipantCLI(win, event_id)
             participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+        elif key == 126 : # Register
+            addParticipantCSV(win, event_id)
+            participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
         elif key == curses.KEY_UP and selected_row_idx > 0:
             selected_row_idx -= 1
         elif key == curses.KEY_DOWN and selected_row_idx < len(participants_list)-1:
@@ -260,24 +248,23 @@ def addParticipantCSV(win,event_id):
     win.clear()
     x,y = 0,0
 
-    # enter csv name
-    win.addstr(y,x,"Event Name : ",curses.color_pair(1))
+    win.addstr(y,x,"Enter CSV Name : ",curses.color_pair(1))
     csv_name = win.getstr().decode("utf-8") 
     y+=1
 
+    curses.curs_set(False)
+    curses.noecho()
+
+    reader = []
+
     with open(csv_name, newline='') as csvfile: # possible error where header names dont match up , use value inside fields to cross check
-        reader = csv.DictReader(csvfile)
+        reader = list(csv.DictReader(csvfile))
         for row in reader:
             row["event_id"] = event_id
 
-    
-    
-    # make list of elements to add
-
-    # make add multiple query
-
-    # https://docs.python.org/3/library/csv.html#csv.DictReader
-    raise NotImplementedError
+    db.participants.insert_many(reader)
+    win.addstr(y,x,"Added successfully | Press any key to continue ",curses.color_pair(1))
+    win.getch()
 
 def viewParticipant(win, participant_id, finalized):
     db_result = db.participants.find_one({"_id":participant_id})
@@ -346,10 +333,5 @@ def viewParticipant(win, participant_id, finalized):
                         else:
                             menu_items.append([f"{field} : {value}", True, f"{field}"])
 
-
-
 # Main Screen Function
 curses.wrapper(init)
-
-# In Line Edit Functionality
-# Hover over the line to edit and Ctrl E to edit , allows editing only the editable parts
