@@ -165,6 +165,17 @@ def view_event(win, event_id):
                                     [f"Description : {db_result['desc']}",True,'desc'],
                                     [f"Issue Date : {db_result['issueDt']}",False],
                                     [f"Participant Fields : {db_result['fields']}",True],]
+        elif key in [100, 68]:
+            if not finalized:
+                y+=1
+                win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                curses.echo()
+                val = win.getstr().decode("utf-8")
+                curses.noecho()
+                if val.lower() == "y":
+                    db.events.delete_one({"_id" : event_id})
+                    db.participants.delete_many({"event_id" : event_id})
+                    break
 
 
 
