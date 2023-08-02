@@ -73,7 +73,7 @@ def main_screen(win):
                 win.addstr(y, x, f"Participant Fields : {info['fields']}")
                 y+=2
 
-                win.addstr(y, x, "Press any key to continue ", curses.color_pair(3))
+                win.addstr(y, x, "Press any key to go to home screen ", curses.color_pair(3))
                 win.getch()
 
             elif selected_row == 1:
@@ -104,7 +104,7 @@ def main_screen(win):
                     y+=1
 
                 y+=1
-                win.addstr(y, x, "Press any key to continue ", curses.color_pair(3))
+                win.addstr(y, x, "Press any key to go to home screen ", curses.color_pair(3))
                 win.getch()
 
 
