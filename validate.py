@@ -21,7 +21,9 @@ def main_screen(win):
     while True:
         win.clear()
         x,y = 0,0
-        win.addstr(y , x,"==== Certify CLI v1.0 | Validation  ====")
+        win.addstr(y , x,"== Certify CLI v1.0 | Validation  ==", curses.color_pair(3))
+        y+=1
+        win.addstr(y, x,"Navigate [⇧/⇩] | Quit [q]", curses.color_pair(1))
         y+=2
 
         # curses.curs_set(True)
@@ -34,36 +36,6 @@ def main_screen(win):
                 win.addstr(y, x, item)
             y += 1
         y+=1
-
-        # win.addstr(y,x,"Enter Event ID : ")
-        # event_id = win.getstr().decode("utf-8")
-        # y+=1
-        # win.addstr(y,x,"Enter Participant ID : ")
-        # participant_id = win.getstr().decode("utf-8")
-        # y+=1
-
-        # win.clear()
-        # x,y = 0,0
-        
-        # if participant_id == "":
-        #     info = db.events.find({"_id" : ObjectId(event_id)})
-        #     win.addstr(y , x,"Valid Event")
-        #     y+=1
-
-        #     for item in info:
-        #         win.addstr(y,x,f"{item}")
-        #         y+=1
-
-        # else:
-        #     info = db.participants.find({"_id" : ObjectId(participant_id), "event_id" : ObjectId(event_id)})
-        #     win.addstr(y, x, "Valid Participant")
-        #     y+=1
-
-        #     for item in info:
-        #         win.addstr(y, x, f"{item}")
-        #         y+=1
-
-        # win.addstr(y, x, "Press any key to continue ", curses.color_pair(1))
         
         key = win.getch()
         if key == 81 or key == 113: # Quit
