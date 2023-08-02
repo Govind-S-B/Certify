@@ -17,16 +17,14 @@ def init(stdscr):
 def main_screen(win): # View Events
 
     selected_row_idx = 0 # initially select index
-
     events_list = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
 
     while True:
-
         win.clear()
         x , y = 0,0
         win.addstr(y,x,"======= Certify CLI v1.0 =======", curses.color_pair(1))
         y+=1
-        win.addstr(y, x,"Register New Event [+] | Quit [q]",curses.color_pair(1))
+        win.addstr(y, x,"Register New Event [+] | Quit [q]", curses.color_pair(1))
         y+=2
 
         if events_list == []:
@@ -65,16 +63,16 @@ def reg_event(win):
     win.clear()
     x,y = 0,0
 
-    item = {"name":None,"desc":None,"issueDt":None,"fields":[]}
+    item = {"name" : None, "desc" : None, "issueDt" : None, "fields" : []}
 
-    win.addstr(y,x,"Event Name : ",curses.color_pair(1))
+    win.addstr(y, x, "Event Name : ", curses.color_pair(1))
     item["name"] = win.getstr().decode("utf-8") 
     y+=1
-    win.addstr(y,x,"Description : ",curses.color_pair(1))
+    win.addstr(y, x, "Description : ", curses.color_pair(1))
     item["desc"] = win.getstr().decode("utf-8")
     y+=1
 
-    win.addstr(y,x,"Fields : ",curses.color_pair(1))
+    win.addstr(y, x, "Fields : ", curses.color_pair(1))
     item["fields"].extend(win.getstr().decode("utf-8").split())
     y+=1
 
@@ -87,7 +85,7 @@ def view_event(win, event_id):
     # View Event Details with edit functionality 
     # Show Participant List option below
 
-    db_result = db.events.find_one({"_id":event_id})
+    db_result = db.events.find_one({"_id" : event_id})
     
     selected_index = 0
 
@@ -109,7 +107,7 @@ def view_event(win, event_id):
             y+=2
 
             for idx, item in enumerate(menu_items):
-                if idx == selected_index  :
+                if idx == selected_index:
                     win.addstr(y, x, item[0], curses.color_pair(2))
                 else:
                     if item[1]: # check if editable field
@@ -134,7 +132,6 @@ def view_event(win, event_id):
             y+=1
 
         key = win.getch()
-
         if key == 81 or key == 113: # Quit
             break
         elif key == 70 or key == 102: # Finalise
