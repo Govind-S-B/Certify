@@ -58,26 +58,30 @@ def main_screen(win):
                 if not ObjectId.is_valid(event_id):
                     win.clear()
                     x,y = 0,0
-                    win.addstr(y, x, "Sorry! no event was found with the provided Event ID")
+                    win.addstr(y, x, "Invalid Event ID. Try again...")
                     y+=2
                 else:
-                    win.clear()
-                    x,y = 0,0
                     info = db.events.find_one({"_id" : ObjectId(event_id)})
-                    print(info)
-                    win.addstr(y, x, "Valid Event", curses.color_pair(3))
-                    y+=2
-
-                    win.addstr(y, x, f"Event ID : {info['_id']}")
-                    y+=1
-                    win.addstr(y, x, f"Event Name : {info['name']}")
-                    y+=1
-                    win.addstr(y, x, f"Description : {info['desc']}")
-                    y+=1
-                    win.addstr(y, x, f"Issue Date : {info['issueDt']}")
-                    y+=1
-                    win.addstr(y, x, f"Participant Fields : {info['fields']}")
-                    y+=2
+                    if info == None:
+                        win.clear()
+                        x,y = 0,0
+                        win.addstr(y, x, "Sorry! no event was found with the provided Event ID")
+                        y+=2
+                    else:
+                        win.clear()
+                        x,y = 0,0
+                        win.addstr(y, x, "Valid Event", curses.color_pair(3))
+                        y+=2
+                        win.addstr(y, x, f"Event ID : {info['_id']}")
+                        y+=1
+                        win.addstr(y, x, f"Event Name : {info['name']}")
+                        y+=1
+                        win.addstr(y, x, f"Description : {info['desc']}")
+                        y+=1
+                        win.addstr(y, x, f"Issue Date : {info['issueDt']}")
+                        y+=1
+                        win.addstr(y, x, f"Participant Fields : {info['fields']}")
+                        y+=2
 
             elif selected_row == 1:
                 win.clear()
@@ -89,28 +93,33 @@ def main_screen(win):
                 curses.noecho()
                 curses.curs_set(False)
 
-                if not ObjectId.is_valid(participant_id):
+                if not ObjectId.is_valid(participant_id): # check if id is valid
                     win.clear()
                     x,y = 0,0
-                    win.addstr(y, x, "Sorry! no certificate was found with the provided Participant ID")
+                    win.addstr(y, x, "Invalid Participant ID. Try again...")
                     y+=2
                 else:
-                    win.clear()
-                    x,y = 0,0
                     info = db.participants.find_one({"_id" : ObjectId(participant_id)})
-                    win.addstr(y, x, "Valid Participant", curses.color_pair(3))
-                    y+=2
-
-                    for item in info:
-                        if item == "_id":
-                            win.addstr(y, x, f"Participant ID : {info[item]}")
-                        elif item == "event_id":
-                            win.addstr(y, x, f"Event ID : {info[item]}")
-                        elif item == "name":
-                            win.addstr(y, x, f"Name : {info[item]}")
-                        else:
-                            win.addstr(y, x, f"{item} : {info[item]}")
+                    if info == None:
+                        win.clear()
+                        x,y = 0,0
+                        win.addstr(y, x, "Sorry! no certificate was found with the provided Participant ID")
                         y+=2
+                    else:
+                        win.clear()
+                        x,y = 0,0
+                        win.addstr(y, x, "Valid Participant", curses.color_pair(3))
+                        y+=2
+                        for item in info:
+                            if item == "_id":
+                                win.addstr(y, x, f"Participant ID : {info[item]}")
+                            elif item == "event_id":
+                                win.addstr(y, x, f"Event ID : {info[item]}")
+                            elif item == "name":
+                                win.addstr(y, x, f"Name : {info[item]}")
+                            else:
+                                win.addstr(y, x, f"{item} : {info[item]}")
+                            y+=2
 
             win.addstr(y, x, "Press any key to continue ", curses.color_pair(3))
             win.getch()
