@@ -55,7 +55,7 @@ def main_screen(win):
                 curses.noecho()
                 curses.curs_set(False)
 
-                if not ObjectId.is_valid(event_id):
+                if (not ObjectId.is_valid(event_id)) and (len(event_id)) != 24:
                     win.clear()
                     x,y = 0,0
                     win.addstr(y, x, "Invalid Event ID. Try again...")
@@ -93,7 +93,7 @@ def main_screen(win):
                 curses.noecho()
                 curses.curs_set(False)
 
-                if not ObjectId.is_valid(participant_id): # check if id is valid
+                if (not ObjectId.is_valid(participant_id)) and (len(participant_id)) != 24: # check if id is valid
                     win.clear()
                     x,y = 0,0
                     win.addstr(y, x, "Invalid Participant ID. Try again...")
