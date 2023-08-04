@@ -40,6 +40,7 @@ def get_gen_info(event_id):
 
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
+    r.headers.add('Access-Control-Allow-Origin', '*')
     return r
 
 if __name__ == '__main__':
