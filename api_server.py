@@ -56,6 +56,25 @@ def get_event_info():
     r.headers['Content-Type'] = 'application/json'
     return r
 
+# for admin page
+
+@app.route('/admin/add/event', methods=['POST'])
+def add_event():
+    item = {}
+    
+    item["name"] = str(request.args.get('name'))
+    item['desc'] = str(request.args.get('desc'))
+    item['fields'] = str(request.args.get('fields')).split()
+    item['issueDt'] = None
+
+    db.events.insert_one(item)
+
+    response = {"db entry status":True}
+
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
 # for figma plugin
 
 @app.route("/plugin/getgeninfo", methods=['GET'])
