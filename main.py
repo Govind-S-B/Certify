@@ -24,7 +24,7 @@ def main_screen(win): # View Events
         x , y = 0,0
         win.addstr(y,x,"======= Certify CLI v1.0 =======", curses.color_pair(1))
         y+=1
-        win.addstr(y, x,"Navigate [⇧/⇩] | Register New Event [+] | Quit [q]", curses.color_pair(1))
+        win.addstr(y, x,"Navigate [up/down arrows] | Register New Event [+] | Quit [q]", curses.color_pair(1))
         y+=2
 
         if events_list == []:

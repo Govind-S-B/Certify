@@ -23,11 +23,8 @@ def main_screen(win):
         x,y = 0,0
         win.addstr(y , x,"== Certify CLI v1.0 | Validation  ==", curses.color_pair(3))
         y+=1
-        win.addstr(y, x,"Navigate [⇧/⇩] | Quit [q]", curses.color_pair(1))
+        win.addstr(y, x,"Navigate [up/down arrows] | Quit [q]", curses.color_pair(1))
         y+=2
-
-        # curses.curs_set(True)
-        # curses.echo()
 
         for idx, item in enumerate(menu_items):
             if idx == selected_row:
