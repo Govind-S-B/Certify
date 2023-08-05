@@ -2,6 +2,8 @@ from pymongo import MongoClient
 import curses
 from datetime import datetime
 import csv
+import requests
+
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client.certify
@@ -63,20 +65,20 @@ def reg_event(win):
     win.clear()
     x,y = 0,0
 
-    item = {"name" : None, "desc" : None, "issueDt" : None, "fields" : []}
-
+    data = {}
     win.addstr(y, x, "Event Name : ", curses.color_pair(1))
-    item["name"] = win.getstr().decode("utf-8") 
+    data["name"] = win.getstr().decode("utf-8") 
     y+=1
     win.addstr(y, x, "Description : ", curses.color_pair(1))
-    item["desc"] = win.getstr().decode("utf-8")
+    data["desc"] = win.getstr().decode("utf-8")
     y+=1
 
     win.addstr(y, x, "Fields : ", curses.color_pair(1))
-    item["fields"].extend(win.getstr().decode("utf-8").split())
+    data["fields"] = win.getstr().decode("utf-8")
     y+=1
 
-    db.events.insert_one(item)
+    response = requests.post('http://localhost:6969/admin/add/event', params=data)
+    # print(response.text)
 
     curses.noecho()
     curses.curs_set(False)
