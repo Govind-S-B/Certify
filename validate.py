@@ -85,22 +85,35 @@ def main_screen(win):
                 x,y = 0,0
                 curses.curs_set(True)
                 curses.echo()
+                win.addstr(y, x, "Enter Event ID : ")
+                event_id = win.getstr().decode("utf-8")
+                y+=1
                 win.addstr(y, x, "Enter Participant ID : ")
                 participant_id = win.getstr().decode("utf-8")
                 curses.noecho()
                 curses.curs_set(False)
 
-                if (not ObjectId.is_valid(participant_id)) and (len(participant_id)) != 24: # check if id is valid
+                if (not ObjectId.is_valid(event_id)) and (len(event_id) != 24) and (not ObjectId.is_valid(participant_id)) and (len(participant_id) != 24): # check if both Event _id and Participant _id are valid
+                    win.clear()
+                    x,y = 0,0
+                    win.addstr(y, x, "Invalid Event ID and Participant ID. Try again...")
+                    y+=2
+                elif (not ObjectId.is_valid(event_id)) and (len(event_id) != 24): # check if Event _id is valid
+                    win.clear()
+                    x,y = 0,0
+                    win.addstr(y, x, "Invalid Event ID. Try again...")
+                    y+=2
+                elif (not ObjectId.is_valid(participant_id)) and (len(participant_id) != 24): # check if Participant _id is valid
                     win.clear()
                     x,y = 0,0
                     win.addstr(y, x, "Invalid Participant ID. Try again...")
                     y+=2
                 else:
-                    info = db.participants.find_one({"_id" : ObjectId(participant_id)})
+                    info = db.participants.find_one({"_id" : ObjectId(participant_id), "event_id" : ObjectId(event_id)})
                     if info == None:
                         win.clear()
                         x,y = 0,0
-                        win.addstr(y, x, "Sorry! no certificate was found with the provided Participant ID")
+                        win.addstr(y, x, "Sorry! no certificate was found with the provided Participant ID for the given event.")
                         y+=2
                     else:
                         win.clear()
