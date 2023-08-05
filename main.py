@@ -164,7 +164,7 @@ def view_event(win, event_id):
                     if selected_index == 4:
                         # for updating fields
                         y+=2
-                        win.addstr(y,x,"## 'name' and 'event_id' are default fields and they cannot be deleted ##", curses.color_pair(1))
+                        win.addstr(y,x,"## 'name' and 'event_id' are present as default fields and cannot be deleted ##", curses.color_pair(3))
                         y+=1
                         win.addstr(y,x,"Enter required fields seperated by commas(,) : ", curses.color_pair(2))
                         curses.curs_set(True)
