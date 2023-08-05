@@ -72,8 +72,10 @@ def reg_event(win):
     item["desc"] = win.getstr().decode("utf-8")
     y+=1
 
-    win.addstr(y, x, "Fields : ", curses.color_pair(1))
-    item["fields"].extend(win.getstr().decode("utf-8").split())
+    win.addstr(y, x, "Fields - seperated by commas(,) : ", curses.color_pair(1))
+    val = win.getstr().decode("utf-8")
+    fields_list = [item.strip() for item in val.split(',')]
+    item["fields"] = fields_list
     y+=1
 
     db.events.insert_one(item)
@@ -157,18 +159,38 @@ def view_event(win, event_id):
             if not finalized:
                 if menu_items[selected_index][1]: # if editable
                     # enter new field value and update
-                    y+=2
-                    win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
-                    curses.echo()
-                    val = win.getstr().decode("utf-8")
-                    curses.noecho()
-                    db.events.update_one({"_id":event_id},{ "$set": { menu_items[selected_index][2] : val } } )
+                    if selected_index == 4:
+                        # for updating fields
+                        y+=2
+                        win.addstr(y,x,"## 'name' and 'event_id' are default fields and they cannot be deleted ##", curses.color_pair(1))
+                        y+=1
+                        win.addstr(y,x,"Enter required fields seperated by commas(,) : ", curses.color_pair(2))
+                        curses.curs_set(True)
+                        curses.echo()
+                        val = win.getstr().decode("utf-8")
+                        curses.noecho()
+                        curses.curs_set(False)
+                        if val == "":
+                            fields_list = []
+                        else:
+                            fields_list = [item.strip() for item in val.split(',')]
+                        db.events.update_one({"_id":event_id},{ "$set": { menu_items[selected_index][2] : fields_list } } )
+                    else:
+                        y+=2
+                        win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
+                        curses.curs_set(True)
+                        curses.echo()
+                        val = win.getstr().decode("utf-8")
+                        curses.noecho()
+                        curses.curs_set(False)
+                        db.events.update_one({"_id":event_id},{ "$set": { menu_items[selected_index][2] : val } } )
+
                     db_result = db.events.find_one({"_id":event_id})  # possibility of this being executed before update
                     menu_items = [  [f"ID : {db_result['_id']}",False],
                                     [f"Event Name : {db_result['name']}",True,'name'],
                                     [f"Description : {db_result['desc']}",True,'desc'],
                                     [f"Issue Date : {db_result['issueDt']}",False],
-                                    [f"Participant Fields : {db_result['fields']}",True],]
+                                    [f"Participant Fields : {db_result['fields']}",True,'fields']]
         elif key in [100, 68]:
             if not finalized:
                 y+=1
