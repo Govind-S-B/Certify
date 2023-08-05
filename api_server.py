@@ -1,4 +1,4 @@
-from flask import Flask, make_response
+from flask import Flask, make_response,request
 from bson import ObjectId
 from pymongo import MongoClient
 import json
@@ -17,6 +17,8 @@ app = Flask(__name__)
 client = MongoClient("mongodb://localhost:27017/")
 db = client.certify
 
+# status check
+
 @app.route('/active', methods=['GET'])
 def get_active_status():
     response = {'active': True}
@@ -25,9 +27,40 @@ def get_active_status():
     r.headers['Content-Type'] = 'application/json'
     return r
 
-@app.route("/getgeninfo/<event_id>")
-def get_gen_info(event_id):
-    event_id = ObjectId(event_id)
+# for validate page
+
+@app.route('/validate/getparticipantinfo', methods=['GET'])
+def get_participant_info():
+    event_id = ObjectId(request.args.get('event_id'))
+    participant_id = ObjectId(request.args.get('participant_id'))
+
+    # make queries
+    query_result = db.participants.find_one({"event_id":event_id,"_id" : participant_id})
+
+    response = query_result
+
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+@app.route('/validate/geteventinfo', methods=['GET'])
+def get_event_info():
+    event_id = ObjectId(request.args.get('event_id'))
+
+    # make queries
+    query_result = db.events.find_one({"_id":event_id})
+
+    response = query_result
+
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+# for figma plugin
+
+@app.route("/plugin/getgeninfo", methods=['GET'])
+def get_gen_info():
+    event_id = ObjectId(request.args.get('event_id'))
 
     # make queries
     event = db.events.find_one({"_id":event_id},{"fields":0})
