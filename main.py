@@ -74,9 +74,7 @@ def reg_event(win):
     y+=1
 
     win.addstr(y, x, "Fields - seperated by commas(,) : ", curses.color_pair(1))
-    val = win.getstr().decode("utf-8")
-    fields_list = [item.strip() for item in val.split(',')]
-    data["fields"] = fields_list
+    data["fields"] = win.getstr().decode("utf-8")
     y+=1
 
     response = requests.post('http://localhost:6969/admin/add/event', params=data)
