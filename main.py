@@ -80,12 +80,12 @@ def reg_event(win):
     else:
         fields_list = [item.strip() for item in val.split(',')]
     data["fields"] = fields_list
+    # print(data)
     y+=2
     curses.noecho()
     curses.curs_set(False)
 
     response = requests.post('http://localhost:6969/admin/add/event', params = data)
-    print(response.text)
     if response.status_code == 200:
         win.addstr(y, x, "Added Event Successfully. Press any key to continue...", curses.color_pair(3))
     else:

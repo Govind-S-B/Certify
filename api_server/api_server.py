@@ -80,7 +80,7 @@ def add_event():
     
     item["name"] = str(request.args.get('name'))
     item['desc'] = str(request.args.get('desc'))
-    item['fields'] = str(request.args.get('fields')).split(',')
+    item['fields'] = request.args.getlist('fields')
     item['issueDt'] = None
 
     db.events.insert_one(item)

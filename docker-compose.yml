@@ -19,8 +19,6 @@ services:
       DB_USERNAME: your_mongo_username
       DB_PASSWORD: your_mongo_password
       API_AUTH_KEY: your_api_auth_key
+      GUNICORN_CMD_ARGS: "--access-logfile ~/certify/logs/gunicorn_access.log --error-logfile ~/certify/logs/gunicorn_error.log"
     ports:
       - "8000:8000"
-    environment:
-      GUNICORN_CMD_ARGS: "--access-logfile ~/certify/logs/gunicorn_access.log --error-logfile ~/certify/logs/gunicorn_error.log"
-    
