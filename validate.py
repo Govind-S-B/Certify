@@ -1,6 +1,7 @@
 from bson import ObjectId
 from pymongo import MongoClient
 import curses
+import requests
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client.certify
@@ -52,13 +53,15 @@ def main_screen(win):
                 curses.noecho()
                 curses.curs_set(False)
 
-                if (not ObjectId.is_valid(event_id)) and (len(event_id)) != 24:
+                if (not ObjectId.is_valid(event_id)) or (len(event_id)) != 24:
                     win.clear()
                     x,y = 0,0
                     win.addstr(y, x, "Invalid Event ID. Try again...")
                     y+=2
                 else:
-                    info = db.events.find_one({"_id" : ObjectId(event_id)})
+                    response = requests.get('http://localhost:6969/validate/geteventinfo', params = {"event_id" : event_id})
+                    info = response.json()
+                    
                     if info == None:
                         win.clear()
                         x,y = 0,0

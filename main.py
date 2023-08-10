@@ -74,14 +74,24 @@ def reg_event(win):
     y+=1
 
     win.addstr(y, x, "Fields - seperated by commas(,) : ", curses.color_pair(1))
-    data["fields"] = win.getstr().decode("utf-8")
-    y+=1
-
-    response = requests.post('http://localhost:6969/admin/add/event', params=data)
-    # print(response.text)
-
+    val = win.getstr().decode("utf-8")
+    if val == "":
+        fields_list = []
+    else:
+        fields_list = [item.strip() for item in val.split(',')]
+    data["fields"] = fields_list
+    y+=2
     curses.noecho()
     curses.curs_set(False)
+
+    response = requests.post('http://localhost:6969/admin/add/event', params = data)
+    print(response.text)
+    if response.status_code == 200:
+        win.addstr(y, x, "Added Event Successfully. Press any key to continue...", curses.color_pair(3))
+    else:
+        win.addstr(y, x, f"Unsuccessful. Error : {response.status_code}. Press any key to continue...", curses.color_pair(3))
+    win.getch()
+
 
 def view_event(win, event_id):
     # View Event Details with edit functionality 
@@ -90,9 +100,8 @@ def view_event(win, event_id):
     db_result = db.events.find_one({"_id" : event_id})
     
     selected_index = 0
-
     # Field_Content , Selectable or Not , field name (used for editing and updating)
-    menu_items = [  [f"ID : {db_result['_id']}", False],
+    menu_items = [  [f"Event ID : {db_result['_id']}", False],
                     [f"Event Name : {db_result['name']}", True, 'name'],
                     [f"Description : {db_result['desc']}", True, 'desc'],
                     [f"Issue Date : {db_result['issueDt']}", False],
@@ -186,7 +195,7 @@ def view_event(win, event_id):
                         db.events.update_one({"_id":event_id},{ "$set": { menu_items[selected_index][2] : val } } )
 
                     db_result = db.events.find_one({"_id":event_id})  # possibility of this being executed before update
-                    menu_items = [  [f"ID : {db_result['_id']}",False],
+                    menu_items = [  [f"Event ID : {db_result['_id']}",False],
                                     [f"Event Name : {db_result['name']}",True,'name'],
                                     [f"Description : {db_result['desc']}",True,'desc'],
                                     [f"Issue Date : {db_result['issueDt']}",False],
