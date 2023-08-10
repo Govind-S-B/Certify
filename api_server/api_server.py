@@ -3,6 +3,7 @@ from bson import ObjectId
 from pymongo import MongoClient
 import json
 from datetime import datetime
+import os  # Import the os module to access environment variables
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -14,8 +15,23 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 app = Flask(__name__)
 
-client = MongoClient("mongodb://localhost:27017/")
+# Use environment variables for MongoDB connection
+mongo_username = os.environ.get("DB_USERNAME")
+mongo_password = os.environ.get("DB_PASSWORD")
+mongo_host = "mongodb"  # Since you're using Docker Compose, you can use the service name as the host
+mongo_port = "27017"
+
+# Connect to MongoDB using environment variables
+client = MongoClient(f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}/")
 db = client.certify
+
+
+api_auth_key = os.environ.get("API_AUTH_KEY")
+def validate_api_key():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
 
 # status check
 

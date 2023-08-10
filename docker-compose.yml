@@ -1,0 +1,26 @@
+version: '3.0'
+
+services:
+  mongodb:
+    image: mongo:6.0.9-rc0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: your_mongo_username
+      MONGO_INITDB_ROOT_PASSWORD: your_mongo_password
+    ports:
+      - "27017:27017"
+    volumes:
+      - ~/mongodb/data/db:/data/db
+
+  api_server:
+    image: your-registry-username/certify_api_server:latest
+    volumes:
+      - ~/certify/logs:~/certify/logs
+    environment:
+      DB_USERNAME: your_mongo_username
+      DB_PASSWORD: your_mongo_password
+      API_AUTH_KEY: your_api_auth_key
+    ports:
+      - "8000:8000"
+    environment:
+      GUNICORN_CMD_ARGS: "--access-logfile ~/certify/logs/gunicorn_access.log --error-logfile ~/certify/logs/gunicorn_error.log"
+    
