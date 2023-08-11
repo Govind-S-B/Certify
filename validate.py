@@ -1,6 +1,7 @@
 from bson import ObjectId
 from pymongo import MongoClient
 import curses
+import requests
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client.certify
@@ -52,13 +53,15 @@ def main_screen(win):
                 curses.noecho()
                 curses.curs_set(False)
 
-                if (not ObjectId.is_valid(event_id)) and (len(event_id)) != 24:
+                if (not ObjectId.is_valid(event_id)) or (len(event_id) != 24):
                     win.clear()
                     x,y = 0,0
                     win.addstr(y, x, "Invalid Event ID. Try again...")
                     y+=2
                 else:
-                    info = db.events.find_one({"_id" : ObjectId(event_id)})
+                    response = requests.get('http://localhost:6969/validate/geteventinfo', params = {"event_id" : event_id})
+                    info = response.json()
+                    
                     if info == None:
                         win.clear()
                         x,y = 0,0
@@ -93,31 +96,35 @@ def main_screen(win):
                 curses.noecho()
                 curses.curs_set(False)
 
-                if (not ObjectId.is_valid(event_id)) and (len(event_id) != 24) and (not ObjectId.is_valid(participant_id)) and (len(participant_id) != 24): # check if both Event _id and Participant _id are valid
+                if ((not ObjectId.is_valid(event_id)) or (len(event_id) != 24)) and ((not ObjectId.is_valid(participant_id)) or (len(participant_id) != 24)): # check if both Event _id and Participant _id are valid
                     win.clear()
                     x,y = 0,0
                     win.addstr(y, x, "Invalid Event ID and Participant ID. Try again...")
                     y+=2
-                elif (not ObjectId.is_valid(event_id)) and (len(event_id) != 24): # check if Event _id is valid
+                elif (not ObjectId.is_valid(event_id)) or (len(event_id) != 24): # check if Event _id is valid
                     win.clear()
                     x,y = 0,0
                     win.addstr(y, x, "Invalid Event ID. Try again...")
                     y+=2
-                elif (not ObjectId.is_valid(participant_id)) and (len(participant_id) != 24): # check if Participant _id is valid
+                elif (not ObjectId.is_valid(participant_id)) or (len(participant_id) != 24): # check if Participant _id is valid
                     win.clear()
                     x,y = 0,0
                     win.addstr(y, x, "Invalid Participant ID. Try again...")
                     y+=2
                 else:
-                    info = db.participants.find_one({"_id" : ObjectId(participant_id), "event_id" : ObjectId(event_id)})
-                    if info == None:
-                        win.clear()
-                        x,y = 0,0
+                    response = requests.get('http://localhost:6969/validate/getparticipantinfo', params = {"event_id" : event_id , "participant_id" : participant_id})
+                    info = response.json()
+                    
+                    win.clear()
+                    x,y = 0,0
+
+                    if response.status_code != 200:
+                        win.addstr(y, x, f"Couldn't connect to server. Error : {response.status_code}", curses.color_pair(3))
+                        y+=2
+                    elif info == None:
                         win.addstr(y, x, "Sorry! no certificate was found with the provided Participant ID for the given event.")
                         y+=2
                     else:
-                        win.clear()
-                        x,y = 0,0
                         win.addstr(y, x, "Valid Participant", curses.color_pair(3))
                         y+=2
                         for item in info:
@@ -129,7 +136,8 @@ def main_screen(win):
                                 win.addstr(y, x, f"Name : {info[item]}")
                             else:
                                 win.addstr(y, x, f"{item} : {info[item]}")
-                            y+=2
+                            y+=1
+                        y+=1
 
             win.addstr(y, x, "Press any key to continue ", curses.color_pair(3))
             win.getch()

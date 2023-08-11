@@ -1,4 +1,4 @@
-from flask import Flask, make_response,request
+from flask import Flask, make_response, request
 from bson import ObjectId
 from pymongo import MongoClient
 import json
@@ -80,7 +80,7 @@ def add_event():
     
     item["name"] = str(request.args.get('name'))
     item['desc'] = str(request.args.get('desc'))
-    item['fields'] = str(request.args.get('fields')).split(',')
+    item['fields'] = request.args.getlist('fields')
     item['issueDt'] = None
 
     db.events.insert_one(item)
