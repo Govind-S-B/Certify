@@ -9,6 +9,12 @@ import requests
 client = MongoClient("mongodb://admin:certifydb@localhost:27017/")
 db = client.certify
 
+# putting auth key headers like this is bad
+# fix later
+headers = {
+    "API-Auth-Key": "random_key"
+    }
+
 def init(stdscr):
     curses.curs_set(False)
     stdscr.keypad(True)
@@ -33,7 +39,7 @@ def print_loading_screen(win):
 
 def main_screen(win): # View Events
     print_loading_screen(win)
-    response = requests.get('http://localhost:6969/admin/view/eventslist')
+    response = requests.get('http://localhost:8000/admin/view/eventslist',headers=headers)
     if check_response(response, win) == 1: # if connected successfully
         events_list = response.json()
         selected_row_idx = 0 # initially select index
@@ -66,7 +72,7 @@ def main_screen(win): # View Events
             elif key == 43: # Register New Event
                 reg_event(win)
                 print_loading_screen(win)
-                response = requests.get('http://localhost:6969/admin/view/eventslist')
+                response = requests.get('http://localhost:8000/admin/view/eventslist', headers=headers)
                 if check_response(response, win) == 1:
                     events_list = response.json()
             elif key == curses.KEY_UP and selected_row_idx > 0:
@@ -76,7 +82,7 @@ def main_screen(win): # View Events
             elif key in [curses.KEY_ENTER, 10, 13]: # View Event
                 if view_event(win,events_list[selected_row_idx]["_id"]) == 1: # if there is any changes, update the events list
                     print_loading_screen(win)
-                    response = requests.get('http://localhost:6969/admin/view/eventslist')
+                    response = requests.get('http://localhost:8000/admin/view/eventslist', headers=headers)
                     if check_response(response, win) == 1:
                         events_list = response.json()
                         if selected_row_idx >= len(events_list):
@@ -108,7 +114,7 @@ def reg_event(win):
     curses.curs_set(False)
 
     print_loading_screen(win)
-    response = requests.post('http://localhost:8000/admin/add/event', params = data)
+    response = requests.post('http://localhost:8000/admin/add/event', params = data, headers=headers)
     win.clear()
     if response.status_code == 200:
         win.addstr(0, 0, "Added Event Successfully. Press any key to continue...", curses.color_pair(3))
@@ -119,7 +125,7 @@ def reg_event(win):
 
 def view_event(win, event_id):
     print_loading_screen(win)
-    response = requests.get('http://localhost:6969/validate/geteventinfo', params = {"event_id" : event_id})
+    response = requests.get('http://localhost:8000/validate/geteventinfo', params = {"event_id" : event_id}, headers=headers)
 
     if check_response(response, win) == 1:
         db_result = response.json()
