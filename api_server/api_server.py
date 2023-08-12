@@ -27,6 +27,7 @@ db = client.certify
 
 api_auth_key = os.environ.get("API_AUTH_KEY")
 
+
 ## for Status Check
 
 @app.route('/active', methods=['GET'])
@@ -36,6 +37,7 @@ def get_active_status():
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
+
 
 ## for Validate Page
 
@@ -66,21 +68,8 @@ def get_event_info():
     r.headers['Content-Type'] = 'application/json'
     return r
 
+
 ## for Admin Page
-@app.route('/admin/get/events', methods=['GET'])
-def get_event():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
-    events_list = list(db.events.find({}, {"_id": 1, "name": 1, "issueDt": 1}))
-
-    response = {"events_list":events_list}
-
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
-    r.headers['Content-Type'] = 'application/json'
-    return r
 
 @app.route('/admin/add/event', methods=['POST'])
 def add_event():
@@ -107,6 +96,11 @@ def add_event():
 # load list of events
 @app.route('/admin/view/eventslist', methods=['GET'])
 def get_events_list():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
     # make queries
     query_result = db.events.find({},{"_id":1,"name":1,"issueDt":1})
     response = list(query_result)
@@ -117,16 +111,22 @@ def get_events_list():
 # load event details
 @app.route('/admin/view/eventinfo', methods=['GET'])
 def get_events_info():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
     event_id = ObjectId(request.args.get('event_id'))
     # make queries
     query_result = db.events.find_one({"_id" : ObjectId(event_id)})
-    response = list(query_result)
+    response = query_result
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
 
 
 ## for Figma Plugin
+
 @app.route("/plugin/getgeninfo", methods=['GET'])
 def get_gen_info():
     provided_key = request.headers.get("API-Auth-Key")
