@@ -4,8 +4,7 @@ from datetime import datetime
 import csv
 import requests
 
-
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient("mongodb://admin:certifydb@localhost:27017/")
 db = client.certify
 
 def init(stdscr):
@@ -85,7 +84,7 @@ def reg_event(win):
     curses.noecho()
     curses.curs_set(False)
 
-    response = requests.post('http://localhost:6969/admin/add/event', params = data)
+    response = requests.post('http://localhost:8000/admin/add/event', params = data)
     if response.status_code == 200:
         win.addstr(y, x, "Added Event Successfully. Press any key to continue...", curses.color_pair(3))
     else:

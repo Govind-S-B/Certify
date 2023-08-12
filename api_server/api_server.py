@@ -25,13 +25,7 @@ mongo_port = "27017"
 client = MongoClient(f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}/")
 db = client.certify
 
-
 api_auth_key = os.environ.get("API_AUTH_KEY")
-def validate_api_key():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
 
 # status check
 
@@ -73,9 +67,28 @@ def get_event_info():
     return r
 
 # for admin page
+@app.route('/admin/get/events', methods=['GET'])
+def get_event():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    events_list = list(db.events.find({}, {"_id": 1, "name": 1, "issueDt": 1}))
+
+    response = {"events_list":events_list}
+
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
 
 @app.route('/admin/add/event', methods=['POST'])
 def add_event():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
     item = {}
     
     item["name"] = str(request.args.get('name'))
@@ -95,6 +108,11 @@ def add_event():
 
 @app.route("/plugin/getgeninfo", methods=['GET'])
 def get_gen_info():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
     event_id = ObjectId(request.args.get('event_id'))
 
     # make queries
