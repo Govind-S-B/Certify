@@ -1,0 +1,214 @@
+[
+  {
+    "v": 1,
+    "requests": [
+      {
+        "testScript": "",
+        "body": {
+          "body": null,
+          "contentType": null
+        },
+        "params": [],
+        "method": "GET",
+        "endpoint": "http://localhost:8000/active",
+        "name": "Active Test",
+        "auth": {
+          "authActive": true,
+          "authType": "none"
+        },
+        "headers": [],
+        "preRequestScript": "",
+        "v": "1"
+      }
+    ],
+    "name": "General",
+    "folders": []
+  },
+  {
+    "folders": [],
+    "v": 1,
+    "name": "Validate",
+    "requests": [
+      {
+        "params": [
+          {
+            "key": "event_id",
+            "value": "64d76d278db6c75b687404a8",
+            "active": true
+          },
+          {
+            "key": "participant_id",
+            "value": "64d76fe8ae204886aadaeda1",
+            "active": true
+          }
+        ],
+        "headers": [],
+        "preRequestScript": "",
+        "body": {
+          "contentType": null,
+          "body": null
+        },
+        "name": "Validate Participant",
+        "v": "1",
+        "method": "GET",
+        "endpoint": "http://localhost:8000/validate/getparticipantinfo",
+        "testScript": "",
+        "auth": {
+          "authType": "none",
+          "authActive": true
+        }
+      },
+      {
+        "params": [
+          {
+            "key": "event_id",
+            "active": true,
+            "value": "64d76d278db6c75b687404a8"
+          }
+        ],
+        "method": "GET",
+        "name": "Validate Event",
+        "body": {
+          "body": null,
+          "contentType": null
+        },
+        "v": "1",
+        "endpoint": "http://localhost:8000/validate/geteventinfo",
+        "testScript": "",
+        "auth": {
+          "authActive": true,
+          "authType": "none"
+        },
+        "headers": [],
+        "preRequestScript": ""
+      }
+    ]
+  },
+  {
+    "v": 1,
+    "folders": [],
+    "requests": [
+      {
+        "preRequestScript": "",
+        "name": "Get Gen Info",
+        "endpoint": "http://localhost:8000/plugin/getgeninfo",
+        "testScript": "",
+        "auth": {
+          "authActive": true,
+          "authType": "api-key",
+          "key": "API-Auth-Key",
+          "value": "random_key",
+          "addTo": "Headers",
+          "token": "random_key"
+        },
+        "v": "1",
+        "headers": [],
+        "method": "GET",
+        "params": [
+          {
+            "value": "64d76d278db6c75b687404a8",
+            "active": true,
+            "key": "event_id"
+          }
+        ],
+        "body": {
+          "body": null,
+          "contentType": null
+        }
+      }
+    ],
+    "name": "Figma Plugin"
+  },
+  {
+    "v": 1,
+    "name": "Admin",
+    "folders": [],
+    "requests": [
+      {
+        "v": "1",
+        "endpoint": "http://localhost:8000/admin/add/event",
+        "name": "Add Event",
+        "params": [
+          {
+            "key": "name",
+            "value": "HoppScotch Test",
+            "active": true
+          },
+          {
+            "key": "desc",
+            "value": "A hoppscoth test event",
+            "active": true
+          },
+          {
+            "key": "fields",
+            "value": "[ 'test' , 'field' ]",
+            "active": true
+          }
+        ],
+        "headers": [],
+        "method": "POST",
+        "auth": {
+          "authType": "api-key",
+          "authActive": true,
+          "key": "API-Auth-Key",
+          "value": "random_key",
+          "addTo": "Headers"
+        },
+        "preRequestScript": "",
+        "testScript": "",
+        "body": {
+          "contentType": null,
+          "body": null
+        }
+      },
+      {
+        "v": "1",
+        "endpoint": "http://localhost:8000/admin/view/eventslist",
+        "name": "Events List",
+        "params": [],
+        "headers": [],
+        "method": "GET",
+        "auth": {
+          "authType": "api-key",
+          "authActive": true,
+          "key": "API-Auth-Key",
+          "value": "random_key",
+          "addTo": "Headers"
+        },
+        "preRequestScript": "",
+        "testScript": "",
+        "body": {
+          "contentType": null,
+          "body": null
+        }
+      },
+      {
+        "v": "1",
+        "endpoint": "http://localhost:8000/admin/view/eventinfo",
+        "name": "View Event Info",
+        "params": [
+          {
+            "key": "event_id",
+            "value": "64d76d278db6c75b687404a8",
+            "active": true
+          }
+        ],
+        "headers": [],
+        "method": "GET",
+        "auth": {
+          "authType": "api-key",
+          "authActive": true,
+          "key": "API-Auth-Key",
+          "value": "random_key",
+          "addTo": "Headers"
+        },
+        "preRequestScript": "",
+        "testScript": "",
+        "body": {
+          "contentType": null,
+          "body": null
+        }
+      }
+    ]
+  }
+]
