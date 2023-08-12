@@ -1,9 +1,8 @@
-from flask import Flask, make_response, request
+from flask import Flask, make_response,request
 from bson import ObjectId
 from pymongo import MongoClient
 import json
 from datetime import datetime
-import os  # Import the os module to access environment variables
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -15,26 +14,10 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 app = Flask(__name__)
 
-# Use environment variables for MongoDB connection
-mongo_username = os.environ.get("DB_USERNAME")
-mongo_password = os.environ.get("DB_PASSWORD")
-mongo_host = "mongodb"  # Since you're using Docker Compose, you can use the service name as the host
-mongo_port = "27017"
-
-# Connect to MongoDB using environment variables
-client = MongoClient(f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}/")
+client = MongoClient("mongodb://localhost:27017/")
 db = client.certify
 
-
-api_auth_key = os.environ.get("API_AUTH_KEY")
-def validate_api_key():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-
 ## for Status Check
-
 @app.route('/active', methods=['GET'])
 def get_active_status():
     response = {'active': True}
@@ -44,7 +27,6 @@ def get_active_status():
     return r
 
 ## for Validate Page
-
 @app.route('/validate/getparticipantinfo', methods=['GET'])
 def get_participant_info():
     event_id = ObjectId(request.args.get('event_id'))
@@ -62,31 +44,24 @@ def get_participant_info():
 @app.route('/validate/geteventinfo', methods=['GET'])
 def get_event_info():
     event_id = ObjectId(request.args.get('event_id'))
-
     # make queries
     query_result = db.events.find_one({"_id":event_id})
-
     response = query_result
-
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
 
 ## for Admin Page
-
 @app.route('/admin/add/event', methods=['POST'])
 def add_event():
     item = {}
-    
     item["name"] = str(request.args.get('name'))
     item['desc'] = str(request.args.get('desc'))
     item['fields'] = request.args.getlist('fields')
     item['issueDt'] = None
-
     db.events.insert_one(item)
 
     response = {"db entry status":True}
-
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
@@ -111,7 +86,6 @@ def get_events_info():
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
-
 
 ## for Figma Plugin
 @app.route("/plugin/getgeninfo", methods=['GET'])
