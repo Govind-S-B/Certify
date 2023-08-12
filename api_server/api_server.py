@@ -136,16 +136,53 @@ def get_gen_info():
     
     event_id = ObjectId(request.args.get('event_id'))
 
-    # make queries
-    event = db.events.find_one({"_id":event_id},{"fields":0})
-    participants = list(db.participants.find({"event_id":event_id}))
+    pipeline = [
+        {
+            "$match": {
+                "_id": event_id
+            }
+        },
+        {
+            "$lookup": {
+                "from": "participants",
+                "localField": "_id",
+                "foreignField": "event_id",
+                "as": "participants"
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "event": {
+                    "_id": "$_id",
+                    "name": "$name",
+                    "desc": "$desc",
+                    "issueDt": "$issueDt"
+                },
+                "participants": {
+                    "$map": {
+                        "input": "$participants",
+                        "as": "participant",
+                        "in": {
+                            "$arrayToObject": {
+                                "$filter": {
+                                    "input": { "$objectToArray": "$$participant" },
+                                    "as": "field",
+                                    "cond": {
+                                        "$ne": [ "$$field.k", "event_id" ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
 
-    response = {
-        "event": event,
-        "participants": participants
-    }
+    result  = db.events.aggregate(pipeline).next()
 
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r = make_response(json.dumps(result, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     r.headers.add('Access-Control-Allow-Origin', '*')
     return r
