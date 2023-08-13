@@ -19,7 +19,7 @@ app = Flask(__name__)
 mongo_username = os.environ.get("DB_USERNAME")
 mongo_password = os.environ.get("DB_PASSWORD")
 mongo_host = "mongodb"  # Since you're using Docker Compose, you can use the service name as the host
-mongo_port = "27017"
+mongo_port = "50420"
 
 # Connect to MongoDB using environment variables
 client = MongoClient(f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}/")
