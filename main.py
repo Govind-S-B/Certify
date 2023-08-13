@@ -205,7 +205,7 @@ def view_event(win, event_id):
                                 fields_list = []
                             else:
                                 fields_list = [item.strip() for item in val.split(',')]
-                            db.events.update_one({"_id":event_id},{ "$set": { menu_items[selected_index][2] : fields_list } } )
+                            db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : fields_list } } )
                         else:
                             y+=2
                             win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
@@ -214,9 +214,9 @@ def view_event(win, event_id):
                             val = win.getstr().decode("utf-8")
                             curses.noecho()
                             curses.curs_set(False)
-                            db.events.update_one({"_id":event_id},{ "$set": { menu_items[selected_index][2] : val } } )
+                            db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : val } } )
 
-                        db_result = db.events.find_one({"_id":event_id})  # possibility of this being executed before update
+                        db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
                         menu_items = [  [f"Event ID : {db_result['_id']}",False],
                                         [f"Event Name : {db_result['name']}",True,'name'],
                                         [f"Description : {db_result['desc']}",True,'desc'],
