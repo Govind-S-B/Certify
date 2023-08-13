@@ -25,13 +25,8 @@ mongo_port = "27017"
 client = MongoClient(f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}/")
 db = client.certify
 
-
 api_auth_key = os.environ.get("API_AUTH_KEY")
-def validate_api_key():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
+
 
 ## for Status Check
 
@@ -42,6 +37,7 @@ def get_active_status():
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
+
 
 ## for Validate Page
 
@@ -72,10 +68,16 @@ def get_event_info():
     r.headers['Content-Type'] = 'application/json'
     return r
 
+
 ## for Admin Page
 
 @app.route('/admin/add/event', methods=['POST'])
 def add_event():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
     item = {}
     
     item["name"] = str(request.args.get('name'))
@@ -94,6 +96,11 @@ def add_event():
 # load list of events
 @app.route('/admin/view/eventslist', methods=['GET'])
 def get_events_list():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
     # make queries
     query_result = db.events.find({},{"_id":1,"name":1,"issueDt":1})
     response = list(query_result)
@@ -104,30 +111,78 @@ def get_events_list():
 # load event details
 @app.route('/admin/view/eventinfo', methods=['GET'])
 def get_events_info():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
     event_id = ObjectId(request.args.get('event_id'))
     # make queries
     query_result = db.events.find_one({"_id" : ObjectId(event_id)})
-    response = list(query_result)
+    response = query_result
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
 
 
 ## for Figma Plugin
+
 @app.route("/plugin/getgeninfo", methods=['GET'])
 def get_gen_info():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
     event_id = ObjectId(request.args.get('event_id'))
 
-    # make queries
-    event = db.events.find_one({"_id":event_id},{"fields":0})
-    participants = list(db.participants.find({"event_id":event_id}))
+    pipeline = [
+        {
+            "$match": {
+                "_id": event_id
+            }
+        },
+        {
+            "$lookup": {
+                "from": "participants",
+                "localField": "_id",
+                "foreignField": "event_id",
+                "as": "participants"
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "event": {
+                    "_id": "$_id",
+                    "name": "$name",
+                    "desc": "$desc",
+                    "issueDt": "$issueDt"
+                },
+                "participants": {
+                    "$map": {
+                        "input": "$participants",
+                        "as": "participant",
+                        "in": {
+                            "$arrayToObject": {
+                                "$filter": {
+                                    "input": { "$objectToArray": "$$participant" },
+                                    "as": "field",
+                                    "cond": {
+                                        "$ne": [ "$$field.k", "event_id" ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
 
-    response = {
-        "event": event,
-        "participants": participants
-    }
+    result  = db.events.aggregate(pipeline).next()
 
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r = make_response(json.dumps(result, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     r.headers.add('Access-Control-Allow-Origin', '*')
     return r

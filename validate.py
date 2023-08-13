@@ -1,10 +1,6 @@
 from bson import ObjectId
-from pymongo import MongoClient
 import curses
 import requests
-
-client = MongoClient("mongodb://localhost:27017/")
-db = client.certify
 
 def init(stdscr):
     curses.curs_set(False)
@@ -22,7 +18,7 @@ def main_screen(win):
     while True:
         win.clear()
         x,y = 0,0
-        win.addstr(y , x,"== Certify CLI v1.0 | Validation  ==", curses.color_pair(3))
+        win.addstr(y , x,"== Certify CLI v1.0 | Validation  ==", curses.color_pair(1))
         y+=1
         win.addstr(y, x,"Navigate [up/down arrows] | Quit [q]", curses.color_pair(1))
         y+=2
@@ -59,7 +55,7 @@ def main_screen(win):
                     win.addstr(y, x, "Invalid Event ID. Try again...")
                     y+=2
                 else:
-                    response = requests.get('http://localhost:6969/validate/geteventinfo', params = {"event_id" : event_id})
+                    response = requests.get('http://localhost:8000/validate/geteventinfo', params = {"event_id" : event_id})
                     info = response.json()
                     
                     if info == None:
@@ -112,7 +108,7 @@ def main_screen(win):
                     win.addstr(y, x, "Invalid Participant ID. Try again...")
                     y+=2
                 else:
-                    response = requests.get('http://localhost:6969/validate/getparticipantinfo', params = {"event_id" : event_id , "participant_id" : participant_id})
+                    response = requests.get('http://localhost:8000/validate/getparticipantinfo', params = {"event_id" : event_id , "participant_id" : participant_id})
                     info = response.json()
                     
                     win.clear()
@@ -144,6 +140,3 @@ def main_screen(win):
 
 
 curses.wrapper(init)
-
-    # if event id only , print valid event and event details
-    # if both , print valid participant id , show details of the user and link to event if requested
