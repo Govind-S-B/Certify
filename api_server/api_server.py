@@ -39,6 +39,7 @@ def get_active_status():
     return r
 
 
+
 ## for Validate Page
 
 @app.route('/validate/getparticipantinfo', methods=['GET'])
@@ -66,8 +67,10 @@ def get_event_info():
     return r
 
 
+
 ## for Admin Page
 
+# Add Event
 @app.route('/admin/add/event', methods=['POST'])
 def add_event():
     provided_key = request.headers.get("API-Auth-Key")
@@ -76,12 +79,46 @@ def add_event():
         return make_response(json.dumps(response), 401)
     
     item = {}
-    
     item["name"] = str(request.args.get('name'))
     item['desc'] = str(request.args.get('desc'))
     item['fields'] = request.args.getlist('fields')
     item['issueDt'] = None
     db.events.insert_one(item)
+
+    response = {"db entry status":True}
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+# Finalize Event
+@app.route('/admin/update/finalize/event', methods=['POST'])
+def finalize_event():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+
+    event_id = ObjectId(request.args.get('event_id'))
+    issueDt = datetime.now()
+    db.events.update_one({"_id":event_id},{ "$set": { "issueDt": issueDt } } )
+
+    response = {"db entry status":True, "issueDt":issueDt}
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+# Update Event
+@app.route('/admin/update/event', methods=['POST'])
+def update_event():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+
+    event_id = ObjectId(request.args.get('event_id'))
+    field = str(request.args.get('field'))
+    value = request.args.getlist('value')
+    db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { field : value } } )
 
     response = {"db entry status":True}
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
@@ -144,8 +181,9 @@ def get_participant_info_admin():
         return make_response(json.dumps(response), 401)
     
     participant_id = ObjectId(request.args.get('participant_id'))
+    event_id = request.args.get('event_id')
     # make queries
-    query_result = db.participants.find_one({"_id" : participant_id})
+    query_result = db.participants.find_one({"_id" : participant_id, "event_id" : event_id})
     response = query_result
     print(response)
     r = make_response(json.dumps(response, cls = CustomJSONEncoder))
@@ -185,6 +223,41 @@ def add_participants():
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
+
+# Update Participant
+@app.route('/admin/update/participant', methods=['POST'])
+def update_participant():
+    # Get the provided API key from the request headers
+    provided_key = request.headers.get("API-Auth-Key")
+
+    # Check if the provided key matches the expected API key
+    if provided_key != api_auth_key:
+        # If the keys don't match, return an error response with status code 401
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+
+    # Get the participant ID, event ID, field, and value from the request arguments
+    participant_id = ObjectId(request.args.get('participant_id'))
+    event_id = request.args.get('event_id')
+    field = str(request.args.get('field'))
+    value = str(request.args.get('value'))
+
+    # Update the participant's field in the database
+    db.participants.update_one(
+        {"_id" : ObjectId(participant_id), "event_id" : event_id},
+        { "$set": {field : value} }
+    )
+
+    # Print the field and value (for debugging purposes)
+    print(field, "\t", value)
+
+    # Prepare the success response with status code 200
+    response = {"db entry status":True}
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+
 
 ## for Figma Plugin
 

@@ -1,11 +1,11 @@
 from pymongo import MongoClient
 from bson import ObjectId
 import curses
-from datetime import datetime
+# from datetime import datetime
 import csv
 import requests
 import json
-# from time import sleep
+from time import sleep
 
 client = MongoClient("mongodb://admin:certifydb@localhost:50420/")
 db = client.certify
@@ -17,27 +17,60 @@ headers = {
     }
 
 def init(stdscr):
+    # Hide the cursor
     curses.curs_set(False)
+
+    # Enable keypad mode for special keys
     stdscr.keypad(True)
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE) # highlight
-    curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK) # selectable fields
+
+    # Initialize color pairs
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Default color scheme
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)  # Highlighted color scheme
+    curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Selectable fields color scheme
+
+    # Call the main_screen function
     main_screen(stdscr)
 
-def check_response(response, win, x=0, y=0):
+def check_response(response, win, x=0, y=0, message=None):
+    """
+    Check the response status code and display a message in the given window.
+
+    Parameters:
+    - response: the response object from the server
+    - win: the window object to display the message
+    - x: the x-coordinate of the message position (default is 0)
+    - y: the y-coordinate of the message position (default is 0)
+    - custom_error_message: a custom error message to display (default is None)
+
+    Returns:
+    - 0 if unable to connect to the server
+    - 1 if connected successfully
+    """
     if response.status_code != 200:
         win.clear()
-        win.addstr(y, x, f"Unable to connect to the server.[Error : {response.status_code}] Press any to continue...", curses.color_pair(3))
+        if message:
+            error_message = message
+        else:
+            error_message = f"Unable to connect to the server. [Error: {response.status_code}] | Press any to continue..."
+        win.addstr(y, x, error_message, curses.color_pair(3))
         win.getch()
-        return 0 # return 0 if unable to connect
+        return 0
     else:
-        return 1 # return 1 if connected successfully
+        return 1
     
 def print_loading_screen(win, x=0, y=0, clear=True):
+    # Clear the window if the 'clear' parameter is True
     if clear:
         win.clear()
-    win.addstr(y,x, "Loading... Please wait...", curses.color_pair(3))
+
+    # Add the loading message to the window at the specified position
+    win.addstr(y, x, "Loading... Please wait...", curses.color_pair(3))
+
+    # Refresh the window to display the changes
     win.refresh()
+
+    # Pause the execution for 0.3 seconds to simulate a loading delay
+    sleep(0.3)
 
 def main_screen(win): # View Events
     print_loading_screen(win)
@@ -83,7 +116,7 @@ def main_screen(win): # View Events
             elif key == curses.KEY_DOWN and selected_row_idx < len(events_list)-1: # navigate down
                 selected_row_idx += 1
 
-            elif key in [curses.KEY_ENTER, 10, 13]: # View Event
+            elif (key in [curses.KEY_ENTER, 10, 13]) and (len(events_list)>0): # View Event
                 if view_event(win,events_list[selected_row_idx]["_id"]) == 1: # if there is any changes, update the events list
                     print_loading_screen(win)
                     response = requests.get('http://localhost:8000/admin/view/eventslist', headers = headers)
@@ -128,6 +161,7 @@ def reg_event(win):
 def view_event(win, event_id):
     print_loading_screen(win)
     response = requests.get('http://localhost:8000/admin/view/eventinfo', params = {"event_id" : event_id}, headers = headers)
+    event_edited = False
 
     if check_response(response, win) == 1:
         db_result = response.json()
@@ -175,7 +209,7 @@ def view_event(win, event_id):
 
             key = win.getch()
             if key in [8, 81, 113]: # Quit
-                return 0    # 0 indicates no changes in db
+                break
             elif key == 70 or key == 102: # Finalise
                 if not finalized:
                     y+=1
@@ -184,10 +218,10 @@ def view_event(win, event_id):
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
                     if val.lower() == "y":
-                        t = datetime.now()
-                        db.events.update_one({"_id":event_id},{ "$set": { "issueDt": t } } )
-                        finalized = True
-                        menu_items[3][0] = f"Issue Date : {t}"
+                        response = requests.post('http://localhost:8000/admin/update/finalize/event', params = {"event_id" : event_id}, headers = headers)
+                        if check_response(response, win) == 1:
+                            finalized = True
+                            menu_items[3][0] = f"Issue Date : {response.json()['issueDt']}"
 
             elif key == curses.KEY_UP and selected_index > 0: # move up
                 selected_index -= 1
@@ -212,7 +246,8 @@ def view_event(win, event_id):
                                 fields_list = []
                             else:
                                 fields_list = [item.strip() for item in val.split(',')]
-                            db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : fields_list } } )
+                            # db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : fields_list } } )
+                            response = requests.post('http://localhost:8000/admin/update/event', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : fields_list}, headers = headers)
                         else:
                             y+=2
                             win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
@@ -221,14 +256,23 @@ def view_event(win, event_id):
                             val = win.getstr().decode("utf-8")
                             curses.noecho()
                             curses.curs_set(False)
-                            db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : val } } )
-
-                        db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
-                        menu_items = [  [f"Event ID : {db_result['_id']}",False],
-                                        [f"Event Name : {db_result['name']}",True,'name'],
-                                        [f"Description : {db_result['desc']}",True,'desc'],
-                                        [f"Issue Date : {db_result['issueDt']}",False],
-                                        [f"Participant Fields : {db_result['fields']}",True,'fields']]
+                            # db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : val } } )
+                            response = requests.post('http://localhost:8000/admin/update/event', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
+                        if check_response(response, win) == 1:
+                            event_edited = True
+                            y+=1
+                            win.addstr(y,x,f"Event {menu_items[selected_index][2]} updated successfully. Press any key to continue...", curses.color_pair(3))
+                            win.getch()
+                            # db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
+                            response = requests.get('http://localhost:8000/admin/view/eventinfo', params = {"event_id" : event_id}, headers = headers)
+                            if check_response(response, win) == 1:
+                                db_result = response.json()
+                                menu_items = [  [f"Event ID : {db_result['_id']}",False],
+                                                [f"Event Name : {db_result['name']}",True,'name'],
+                                                [f"Description : {db_result['desc']}",True,'desc'],
+                                                [f"Issue Date : {db_result['issueDt']}",False],
+                                                [f"Participant Fields : {db_result['fields']}",True,'fields']]
+                            
             elif key in [100, 68]:
                 if not finalized:
                     y+=1
@@ -285,19 +329,32 @@ def viewParticipants(win, event_id, finalized, fields):
                 selected_row_idx -= 1
             elif key == curses.KEY_DOWN and selected_row_idx < len(participants_list)-1: # navigate down
                 selected_row_idx += 1
-                
+
             elif key == 43: # Register CLI
                 addParticipantCLI(win, event_id, fields)
-                participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+                # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+                print_loading_screen(win)
+                response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
+                if check_response(response, win) == 1:
+                    participants_list = response.json()
+
             elif key == 126 : # Register CSV
                 addParticipantCSV(win, event_id)
-                participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+                # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+                print_loading_screen(win)
+                response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
+                if check_response(response, win) == 1:
+                    participants_list = response.json()
 
-            elif key in [curses.KEY_ENTER, 10, 13]: # View Participant
-                if viewParticipant(win, participants_list[selected_row_idx]["_id"], finalized) == 1: # if db updated, update the participants list
-                    participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-                    if selected_row_idx >= len(participants_list):
-                        selected_row_idx -= 1 # to move the highlight up by one row after deletion
+            elif (key in [curses.KEY_ENTER, 10, 13]) and (len(participants_list)>0): # View Participant
+                if viewParticipant(win, event_id, participants_list[selected_row_idx]["_id"], finalized) == 1: # if db updated, update the participants list
+                    # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+                    print_loading_screen(win)
+                    response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
+                    if check_response(response, win) == 1:
+                        participants_list = response.json()
+                        if selected_row_idx >= len(participants_list):
+                            selected_row_idx -= 1 # to move the highlight up by one row after deletion
 
             elif key in [68, 100]:
                 if not finalized:
@@ -369,9 +426,9 @@ def addParticipantCSV(win,event_id):
         win.addstr(0,0,"Added successfully | Press any key to continue...", curses.color_pair(3))
         win.getch()
 
-def viewParticipant(win, participant_id, finalized):
+def viewParticipant(win, event_id, participant_id, finalized):
     print_loading_screen(win)
-    response = requests.get('http://localhost:8000/admin/view/participantinfo', params = {"participant_id" : participant_id}, headers = headers)
+    response = requests.get('http://localhost:8000/admin/view/participantinfo', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
     if check_response(response, win) == 1:
         db_result = response.json()
         selected_index = 0
@@ -427,15 +484,23 @@ def viewParticipant(win, participant_id, finalized):
                         val = win.getstr().decode("utf-8")
                         curses.noecho()
                         curses.curs_set(False)
-                        db.participants.update_one({"_id" : ObjectId(participant_id)},{ "$set": { menu_items[selected_index][2] : val } } )
-                        participant_edited = True
-                        db_result = db.participants.find_one({"_id" : ObjectId(participant_id)})
-                        menu_items = []
-                        for field, value in db_result.items():
-                            if field in ["_id", "event_id"]:
-                                menu_items.append([f"{field} : {value}", False]) # IDs not editable
-                            else:
-                                menu_items.append([f"{field} : {value}", True, f"{field}"])
+
+                        # db.participants.update_one({"_id" : ObjectId(participant_id), "event_id" : event_id},{ "$set": { menu_items[selected_index][2] : val } } )
+                        print_loading_screen(win)
+                        response = requests.post('http://localhost:8000/admin/update/participant', params = {"participant_id" : participant_id, "event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
+                        if check_response(response, win) == 1:
+                            participant_edited = True
+                            # db_result = db.participants.find_one({"_id" : ObjectId(participant_id), "event_id" : event_id})
+                            response = requests.get('http://localhost:8000/admin/view/participantinfo', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
+                            if check_response(response, win) == 1:
+                                db_result = response.json()
+                                menu_items = []
+                                for field, value in db_result.items():
+                                    if field in ["_id", "event_id"]:
+                                        menu_items.append([f"{field} : {value}", False]) # IDs not editable
+                                    else:
+                                        menu_items.append([f"{field} : {value}", True, f"{field}"])
+
             elif key in [68,100]: # Delete participant
                 if not finalized:
                     win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
@@ -443,7 +508,7 @@ def viewParticipant(win, participant_id, finalized):
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
                     if val.lower() == "y":
-                        db.participants.delete_one({"_id" : ObjectId(participant_id)})
+                        db.participants.delete_one({"_id" : ObjectId(participant_id), "event_id" : event_id})
                         participant_edited = True
                         break
     if not participant_edited:
