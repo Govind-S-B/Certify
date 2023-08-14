@@ -1,7 +1,6 @@
 from pymongo import MongoClient
 from bson import ObjectId
 import curses
-# from datetime import datetime
 import csv
 import requests
 import json
@@ -154,7 +153,7 @@ def reg_event(win):
     response = requests.post('http://localhost:8000/admin/add/event', params = data, headers = headers)
     win.clear()
     if check_response(response, win) == 1:
-        win.addstr(0, 0, "Added Event Successfully. Press any key to continue...", curses.color_pair(3))
+        win.addstr(0, 0, "Added Event Successfully | Press any key to continue...", curses.color_pair(3))
         win.getch()
 
 
@@ -261,7 +260,7 @@ def view_event(win, event_id):
                         if check_response(response, win) == 1:
                             event_edited = True
                             y+=1
-                            win.addstr(y,x,f"Event {menu_items[selected_index][2]} updated successfully. Press any key to continue...", curses.color_pair(3))
+                            win.addstr(y,x,f"Event {menu_items[selected_index][2]} updated successfully | Press any key to continue...", curses.color_pair(3))
                             win.getch()
                             # db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
                             response = requests.get('http://localhost:8000/admin/view/eventinfo', params = {"event_id" : event_id}, headers = headers)
@@ -281,9 +280,15 @@ def view_event(win, event_id):
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
                     if val.lower() == "y":
-                        db.events.delete_one({"_id" : ObjectId(event_id)})
-                        db.participants.delete_many({"event_id" : ObjectId(event_id)})
-                        break
+                        # db.events.delete_one({"_id" : ObjectId(event_id)})
+                        # db.participants.delete_many({"event_id" : event_id})
+                        print_loading_screen(win)
+                        response = requests.delete('http://localhost:8000/admin/delete/event', params = {"event_id" : event_id}, headers = headers)
+                        if check_response(response, win) == 1:
+                            win.clear()
+                            win.addstr(0, 0, "Event Deleted Successfully | Press any key to continue...", curses.color_pair(3))
+                            win.getch()
+                            break
             elif key == 83 or key == 115: # View Participants
                 viewParticipants(win, event_id, finalized, db_result['fields'])
         return 1    # 1 indicates db is updated
@@ -356,7 +361,7 @@ def viewParticipants(win, event_id, finalized, fields):
                         if selected_row_idx >= len(participants_list):
                             selected_row_idx -= 1 # to move the highlight up by one row after deletion
 
-            elif key in [68, 100]:
+            elif (key in [68, 100]) and (len(participants_list)>0):
                 if not finalized:
                     win.clear()
                     x,y = 0,0
@@ -365,9 +370,15 @@ def viewParticipants(win, event_id, finalized, fields):
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
                     if val.lower() == "y":
-                        db.participants.delete_many({"event_id" : event_id})
-                    participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-                    selected_row_idx = 0
+                        # db.participants.delete_many({"event_id" : event_id})
+                        print_loading_screen(win)
+                        response = requests.delete('http://localhost:8000/admin/delete/participants', params = {"event_id" : event_id}, headers = headers)
+                        if check_response(response, win) == 1:
+                            win.clear()
+                            win.addstr(0, 0, "Participants Deleted Successfully | Press any key to continue...", curses.color_pair(3))
+                            win.getch()
+                            participants_list = []
+                            selected_row_idx = 0
 
 
 def addParticipantCLI(win, event_id, fields):
@@ -391,7 +402,7 @@ def addParticipantCLI(win, event_id, fields):
     response = requests.post('http://localhost:8000/admin/add/participant', params = {"data": json_string}, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
-        win.addstr(0, 0, "Added Participant Successfully. Press any key to continue...", curses.color_pair(3))
+        win.addstr(0, 0, "Participant added successfully | Press any key to continue...", curses.color_pair(3))
         win.getch()
 
     curses.noecho()
@@ -423,7 +434,7 @@ def addParticipantCSV(win,event_id):
     response = requests.post('http://localhost:8000/admin/add/participants', params = {"data": items}, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
-        win.addstr(0,0,"Added successfully | Press any key to continue...", curses.color_pair(3))
+        win.addstr(0,0,"Participants added successfully | Press any key to continue...", curses.color_pair(3))
         win.getch()
 
 def viewParticipant(win, event_id, participant_id, finalized):
@@ -432,7 +443,7 @@ def viewParticipant(win, event_id, participant_id, finalized):
     if check_response(response, win) == 1:
         db_result = response.json()
         selected_index = 0
-        participant_edited = False
+        participant_is_edited = False
 
         menu_items = []
         for field, value in db_result.items():
@@ -466,13 +477,16 @@ def viewParticipant(win, event_id, participant_id, finalized):
                     y += 1
                 y+=1
 
+            # key listeners and actions
             key = win.getch()
             if key in [8, 81, 113]: # Quit
                 break
+
             elif key == curses.KEY_UP and selected_index > 0: # navigate up
                 selected_index -= 1
             elif key == curses.KEY_DOWN and selected_index < len(menu_items)-1: # navigate down
                 selected_index += 1
+
             elif key in [curses.KEY_ENTER, 10, 13]: # Edit Field
                 if not finalized:
                     if menu_items[selected_index][1]: # if editable
@@ -489,7 +503,7 @@ def viewParticipant(win, event_id, participant_id, finalized):
                         print_loading_screen(win)
                         response = requests.post('http://localhost:8000/admin/update/participant', params = {"participant_id" : participant_id, "event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         if check_response(response, win) == 1:
-                            participant_edited = True
+                            participant_is_edited = True
                             # db_result = db.participants.find_one({"_id" : ObjectId(participant_id), "event_id" : event_id})
                             response = requests.get('http://localhost:8000/admin/view/participantinfo', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
                             if check_response(response, win) == 1:
@@ -508,13 +522,15 @@ def viewParticipant(win, event_id, participant_id, finalized):
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
                     if val.lower() == "y":
-                        db.participants.delete_one({"_id" : ObjectId(participant_id), "event_id" : event_id})
-                        participant_edited = True
-                        break
-    if not participant_edited:
-        return 0
-    else:
+                        # db.participants.delete_one({"_id" : ObjectId(participant_id), "event_id" : event_id})
+                        response = requests.delete('http://localhost:8000/admin/delete/participant', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
+                        if check_response(response, win) == 1:
+                            participant_is_edited = True
+                            break
+    if participant_is_edited:
         return 1
+    else:
+        return 0
 
 
 # Main Screen Function

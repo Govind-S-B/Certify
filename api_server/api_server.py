@@ -117,7 +117,10 @@ def update_event():
 
     event_id = ObjectId(request.args.get('event_id'))
     field = str(request.args.get('field'))
-    value = request.args.getlist('value')
+    if field == "fields":
+        value = request.args.getlist('value')
+    else:
+        value = str(request.args.get('value'))
     db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { field : value } } )
 
     response = {"db entry status":True}
@@ -152,6 +155,23 @@ def get_event_info_admin():
     # make queries
     query_result = db.events.find_one({"_id" : ObjectId(event_id)})
     response = query_result
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+# Delete Event
+@app.route('/admin/delete/event', methods=['DELETE'])
+def delete_event():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    event_id = request.args.get('event_id')
+    db.events.delete_one({"_id" : ObjectId(event_id)})
+    db.participants.delete_many({"event_id" : event_id})
+
+    response = {"db entry status":True}
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
@@ -257,6 +277,39 @@ def update_participant():
     r.headers['Content-Type'] = 'application/json'
     return r
 
+# Delete Participants in bulk
+@app.route('/admin/delete/participants', methods=['DELETE'])
+def delete_participants():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    event_id = request.args.get('event_id')
+    db.participants.delete_many({"event_id" : event_id})
+
+    response = {"db entry status":True}
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+# Delete Participant
+@app.route('/admin/delete/participant', methods=['DELETE'])
+def delete_participant():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    
+    participant_id = ObjectId(request.args.get('participant_id'))
+    event_id = request.args.get('event_id')
+    db.participants.delete_one({"_id" : participant_id, "event_id" : event_id})
+
+    response = {"db entry status":True}
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
 
 
 ## for Figma Plugin
