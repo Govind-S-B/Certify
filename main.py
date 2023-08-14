@@ -4,6 +4,7 @@ import curses
 from datetime import datetime
 import csv
 import requests
+import json
 # from time import sleep
 
 client = MongoClient("mongodb://admin:certifydb@localhost:50420/")
@@ -23,23 +24,24 @@ def init(stdscr):
     curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK) # selectable fields
     main_screen(stdscr)
 
-def check_response(response, win):
+def check_response(response, win, x=0, y=0):
     if response.status_code != 200:
         win.clear()
-        win.addstr(0, 0, "Unable to connect to the server. Press any to continue...", curses.color_pair(3))
+        win.addstr(y, x, f"Unable to connect to the server.[Error : {response.status_code}] Press any to continue...", curses.color_pair(3))
         win.getch()
         return 0 # return 0 if unable to connect
     else:
         return 1 # return 1 if connected successfully
     
-def print_loading_screen(win):
-    win.clear()
-    win.addstr(0,0, "Loading... Please wait...", curses.color_pair(3))
+def print_loading_screen(win, x=0, y=0, clear=True):
+    if clear:
+        win.clear()
+    win.addstr(y,x, "Loading... Please wait...", curses.color_pair(3))
     win.refresh()
 
 def main_screen(win): # View Events
     print_loading_screen(win)
-    response = requests.get('http://localhost:8000/admin/view/eventslist',headers=headers)
+    response = requests.get('http://localhost:8000/admin/view/eventslist', headers=headers)
     if check_response(response, win) == 1: # if connected successfully
         events_list = response.json()
         selected_row_idx = 0 # initially select index
@@ -60,29 +62,31 @@ def main_screen(win): # View Events
                     if idx == selected_row_idx:
                         win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(2))
                     else:
-                        if item["issueDt"] == None: # check finalized
+                        if item["issueDt"] == None: # check if finalized
                             win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(3))
                         else:
                             win.addstr(y, x, f"{item['_id']} {item['name']}")
                     y += 1
 
-            key = win.getch()
-            if key == 81 or key == 113: # Quit
+            key = win.getch() # keyboard input
+            if key in [8, 81, 113]: # Quit
                 break
             elif key == 43: # Register New Event
                 reg_event(win)
                 print_loading_screen(win)
-                response = requests.get('http://localhost:8000/admin/view/eventslist', headers=headers)
+                response = requests.get('http://localhost:8000/admin/view/eventslist', headers = headers)
                 if check_response(response, win) == 1:
                     events_list = response.json()
-            elif key == curses.KEY_UP and selected_row_idx > 0:
+
+            elif key == curses.KEY_UP and selected_row_idx > 0: # navigate up
                 selected_row_idx -= 1
-            elif key == curses.KEY_DOWN and selected_row_idx < len(events_list)-1:
+            elif key == curses.KEY_DOWN and selected_row_idx < len(events_list)-1: # navigate down
                 selected_row_idx += 1
+
             elif key in [curses.KEY_ENTER, 10, 13]: # View Event
                 if view_event(win,events_list[selected_row_idx]["_id"]) == 1: # if there is any changes, update the events list
                     print_loading_screen(win)
-                    response = requests.get('http://localhost:8000/admin/view/eventslist', headers=headers)
+                    response = requests.get('http://localhost:8000/admin/view/eventslist', headers = headers)
                     if check_response(response, win) == 1:
                         events_list = response.json()
                         if selected_row_idx >= len(events_list):
@@ -114,18 +118,16 @@ def reg_event(win):
     curses.curs_set(False)
 
     print_loading_screen(win)
-    response = requests.post('http://localhost:8000/admin/add/event', params = data, headers=headers)
+    response = requests.post('http://localhost:8000/admin/add/event', params = data, headers = headers)
     win.clear()
-    if response.status_code == 200:
+    if check_response(response, win) == 1:
         win.addstr(0, 0, "Added Event Successfully. Press any key to continue...", curses.color_pair(3))
-    else:
-        win.addstr(0, 0, f"Unsuccessful. Error : {response.status_code}. Press any key to continue...", curses.color_pair(3))
-    win.getch()
+        win.getch()
 
 
 def view_event(win, event_id):
     print_loading_screen(win)
-    response = requests.get('http://localhost:8000/validate/geteventinfo', params = {"event_id" : event_id}, headers=headers)
+    response = requests.get('http://localhost:8000/admin/view/eventinfo', params = {"event_id" : event_id}, headers = headers)
 
     if check_response(response, win) == 1:
         db_result = response.json()
@@ -143,6 +145,7 @@ def view_event(win, event_id):
             win.clear()
             x,y = 0,0
 
+            # List event details
             if not finalized:
                 win.addstr(y, x, f"[MODIFIABLE] [F to Finalize]", curses.color_pair(1))
                 y+=2
@@ -171,7 +174,7 @@ def view_event(win, event_id):
                 y+=1
 
             key = win.getch()
-            if key == 81 or key == 113: # Quit
+            if key in [8, 81, 113]: # Quit
                 return 0    # 0 indicates no changes in db
             elif key == 70 or key == 102: # Finalise
                 if not finalized:
@@ -185,8 +188,7 @@ def view_event(win, event_id):
                         db.events.update_one({"_id":event_id},{ "$set": { "issueDt": t } } )
                         finalized = True
                         menu_items[3][0] = f"Issue Date : {t}"
-            elif key == 83 or key == 115: # View Participants
-                viewParticipants(win, event_id, finalized)
+
             elif key == curses.KEY_UP and selected_index > 0: # move up
                 selected_index -= 1
             elif key == curses.KEY_DOWN and selected_index < len(menu_items)-1: # move down
@@ -238,89 +240,102 @@ def view_event(win, event_id):
                         db.events.delete_one({"_id" : ObjectId(event_id)})
                         db.participants.delete_many({"event_id" : ObjectId(event_id)})
                         break
+            elif key == 83 or key == 115: # View Participants
+                viewParticipants(win, event_id, finalized, db_result['fields'])
         return 1    # 1 indicates db is updated
     return 0 # passes 0 if unable to connect indicating no change in db
 
-def viewParticipants(win, event_id, finalized):
+def viewParticipants(win, event_id, finalized, fields):
     # ... Participant List // View Participant with inline value edit functionality
 
-    participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-    selected_row_idx = 0 # initially select index
-
-    while True:
-        win.clear()
-        x,y = 0,0
-        if not finalized:
-            win.addstr(y, x,"Add Participant [+] | Add Via CSV [~] | Delete All Participants [D] | Go Back [Q]",curses.color_pair(1))
-            y+=2
-        else:
-            win.addstr(y, x,"[FINALIZED]", curses.color_pair(1))
-            y+=2
-
-        if participants_list == []:
-            win.addstr(y , x,"No participants added")
-            y+=1
-        else:
-            for idx, item in enumerate(participants_list):
-                if idx == selected_row_idx:
-                    win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(2))
-                else:
-                    if finalized == False: # check finalized
-                        win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(3))
-                    else:
-                        win.addstr(y, x, f"{item['_id']} {item['name']}")
-                y += 1
-        
-
-        key = win.getch()
-        if key == 81 or key == 113: # Quit
-            return
-        elif key == 43: # Register
-            addParticipantCLI(win, event_id)
-            participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-        elif key == 126 : # Register
-            addParticipantCSV(win, event_id)
-            participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-        elif key == curses.KEY_UP and selected_row_idx > 0:
-            selected_row_idx -= 1
-        elif key == curses.KEY_DOWN and selected_row_idx < len(participants_list)-1:
-            selected_row_idx += 1
-        elif key in [curses.KEY_ENTER, 10, 13]: # View Event
-            viewParticipant(win, participants_list[selected_row_idx]["_id"], finalized)
-            participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-            if selected_row_idx >= len(participants_list):
-                selected_row_idx -= 1 # to move the highlight up by one row after deletion
-        elif key in [68, 100]:
+    # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+    print_loading_screen(win)
+    response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
+    if check_response(response, win) == 1:
+        participants_list = response.json()
+        selected_row_idx = 0 # initially select index
+        while True:
+            win.clear()
+            x,y = 0,0
             if not finalized:
-                win.clear()
-                x,y = 0,0
-                win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
-                curses.echo()
-                val = win.getstr().decode("utf-8")
-                curses.noecho()
-                if val.lower() == "y":
-                    db.participants.delete_many({"event_id" : event_id})
-                participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
-                selected_row_idx = 0
+                win.addstr(y, x,"Add Participant [+] | Add Via CSV [~] | Delete All Participants [D] | Go Back [Q]",curses.color_pair(1))
+                y+=2
+            else:
+                win.addstr(y, x,"[FINALIZED]", curses.color_pair(1))
+                y+=2
 
-def addParticipantCLI(win, event_id):
+            if participants_list == []:
+                win.addstr(y , x,"No participants added")
+                y+=1
+            else:
+                for idx, item in enumerate(participants_list):
+                    if idx == selected_row_idx:
+                        win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(2))
+                    else:
+                        if finalized == False: # check finalized
+                            win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(3))
+                        else:
+                            win.addstr(y, x, f"{item['_id']} {item['name']}")
+                    y += 1
+            
+            key = win.getch()
+            if key in [8, 81, 113]: # Quit
+                return
+            elif key == curses.KEY_UP and selected_row_idx > 0: # navigate up
+                selected_row_idx -= 1
+            elif key == curses.KEY_DOWN and selected_row_idx < len(participants_list)-1: # navigate down
+                selected_row_idx += 1
+                
+            elif key == 43: # Register CLI
+                addParticipantCLI(win, event_id, fields)
+                participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+            elif key == 126 : # Register CSV
+                addParticipantCSV(win, event_id)
+                participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+
+            elif key in [curses.KEY_ENTER, 10, 13]: # View Participant
+                if viewParticipant(win, participants_list[selected_row_idx]["_id"], finalized) == 1: # if db updated, update the participants list
+                    participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+                    if selected_row_idx >= len(participants_list):
+                        selected_row_idx -= 1 # to move the highlight up by one row after deletion
+
+            elif key in [68, 100]:
+                if not finalized:
+                    win.clear()
+                    x,y = 0,0
+                    win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                    curses.echo()
+                    val = win.getstr().decode("utf-8")
+                    curses.noecho()
+                    if val.lower() == "y":
+                        db.participants.delete_many({"event_id" : event_id})
+                    participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+                    selected_row_idx = 0
+
+
+def addParticipantCLI(win, event_id, fields):
     curses.curs_set(True)
     curses.echo()
     win.clear()
     x,y = 0,0
-
     item = {}
-    fields = db.events.find({"_id":event_id},{"fields":1})
-
     win.addstr(y,x,"Name : ", curses.color_pair(1))
     item["name"] = win.getstr().decode("utf-8") 
     y+=1
     item["event_id"] = event_id
-    for field in fields[0]["fields"]:
+    
+    for field in fields:
         win.addstr(y, x, field+' : ' ,curses.color_pair(1))
         item[field] = win.getstr().decode("utf-8") 
         y+=1
-    db.participants.insert_one(item)
+
+    json_string = json.dumps(item)
+    print_loading_screen(win)
+    response = requests.post('http://localhost:8000/admin/add/participant', params = {"data": json_string}, headers = headers)
+    if check_response(response, win) == 1:
+        win.clear()
+        win.addstr(0, 0, "Added Participant Successfully. Press any key to continue...", curses.color_pair(3))
+        win.getch()
 
     curses.noecho()
     curses.curs_set(False)
@@ -332,7 +347,7 @@ def addParticipantCSV(win,event_id):
     win.clear()
     x,y = 0,0
 
-    win.addstr(y,x,"Enter CSV Name : ",curses.color_pair(1))
+    win.addstr(y, x, "Enter CSV Name : ", curses.color_pair(1))
     csv_name = win.getstr().decode("utf-8") 
     y+=1
 
@@ -340,92 +355,102 @@ def addParticipantCSV(win,event_id):
     curses.noecho()
 
     reader = []
-
     with open(csv_name, newline='') as csvfile: # possible error where header names dont match up , use value inside fields to cross check
         reader = list(csv.DictReader(csvfile))
         for row in reader:
             row["event_id"] = event_id
+    # db.participants.insert_many(reader)
 
-    db.participants.insert_many(reader)
-    win.addstr(y,x,"Added successfully | Press any key to continue ",curses.color_pair(1))
-    win.getch()
+    items = json.dumps(reader)
+    print_loading_screen(win)
+    response = requests.post('http://localhost:8000/admin/add/participants', params = {"data": items}, headers = headers)
+    if check_response(response, win) == 1:
+        win.clear()
+        win.addstr(0,0,"Added successfully | Press any key to continue...", curses.color_pair(3))
+        win.getch()
 
 def viewParticipant(win, participant_id, finalized):
-    db_result = db.participants.find_one({"_id":participant_id})
-    selected_index = 0
+    print_loading_screen(win)
+    response = requests.get('http://localhost:8000/admin/view/participantinfo', params = {"participant_id" : participant_id}, headers = headers)
+    if check_response(response, win) == 1:
+        db_result = response.json()
+        selected_index = 0
+        participant_edited = False
 
-    menu_items = []
-    for field, value in db_result.items():
-        if field in ["_id", "event_id"]:
-            menu_items.append([f"{field} : {value}", False]) # IDs are not editable
-        else:
-            menu_items.append([f"{field} : {value}", True, f"{field}"])
+        menu_items = []
+        for field, value in db_result.items():
+            if field in ["_id", "event_id"]:
+                menu_items.append([f"{field} : {value}", False]) # IDs are not editable
+            else:
+                menu_items.append([f"{field} : {value}", True, f"{field}"])
 
-    while True:
-        win.clear()
-        x,y = 0,0
+        while True:
+            win.clear()
+            x,y = 0,0
 
-        if not finalized:
-            win.addstr(y, x, f"[MODIFIABLE] | Delete Participant [D] | Go Back [Q]", curses.color_pair(1))
-            y+=2
-
-            for idx, item in enumerate(menu_items):
-                if idx == selected_index:
-                    win.addstr(y, x, item[0],curses.color_pair(2))
-                else:
-                    if item[1]: # check if editable field
-                        win.addstr(y, x, item[0],curses.color_pair(3))
-                    else:
-                        win.addstr(y, x, item[0])
-                y += 1
-            y+=1
-        else:
-            win.addstr(y, x, f"[FINALIZED] | Go Back [Q]", curses.color_pair(1))
-            y+=2
-
-            for item in menu_items:
-                win.addstr(y, x, item[0])
-                y += 1
-            y+=1
-
-        key = win.getch()
-
-        if key == 81 or key == 113: # Quit
-            break
-        elif key == curses.KEY_UP and selected_index > 0:
-            selected_index -= 1
-        elif key == curses.KEY_DOWN and selected_index < len(menu_items)-1:
-            selected_index += 1
-        elif key in [curses.KEY_ENTER, 10, 13]: # Edit Field
             if not finalized:
-                if menu_items[selected_index][1]: # if editable
-                    # enter new field value and update
-                    y+=2
-                    win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
-                    curses.curs_set(True)
+                win.addstr(y, x, f"[MODIFIABLE] | Delete Participant [D] | Go Back [Q]", curses.color_pair(1))
+                y+=2
+                for idx, item in enumerate(menu_items):
+                    if idx == selected_index:
+                        win.addstr(y, x, item[0],curses.color_pair(2))
+                    else:
+                        if item[1]: # check if editable field
+                            win.addstr(y, x, item[0],curses.color_pair(3))
+                        else:
+                            win.addstr(y, x, item[0])
+                    y += 1
+                y+=1
+            else:
+                win.addstr(y, x, f"[FINALIZED] | Go Back [Q]", curses.color_pair(1))
+                y+=2
+                for item in menu_items:
+                    win.addstr(y, x, item[0])
+                    y += 1
+                y+=1
+
+            key = win.getch()
+            if key in [8, 81, 113]: # Quit
+                break
+            elif key == curses.KEY_UP and selected_index > 0: # navigate up
+                selected_index -= 1
+            elif key == curses.KEY_DOWN and selected_index < len(menu_items)-1: # navigate down
+                selected_index += 1
+            elif key in [curses.KEY_ENTER, 10, 13]: # Edit Field
+                if not finalized:
+                    if menu_items[selected_index][1]: # if editable
+                        # enter new field value and update
+                        y+=2
+                        win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
+                        curses.curs_set(True)
+                        curses.echo()
+                        val = win.getstr().decode("utf-8")
+                        curses.noecho()
+                        curses.curs_set(False)
+                        db.participants.update_one({"_id" : ObjectId(participant_id)},{ "$set": { menu_items[selected_index][2] : val } } )
+                        participant_edited = True
+                        db_result = db.participants.find_one({"_id" : ObjectId(participant_id)})
+                        menu_items = []
+                        for field, value in db_result.items():
+                            if field in ["_id", "event_id"]:
+                                menu_items.append([f"{field} : {value}", False]) # IDs not editable
+                            else:
+                                menu_items.append([f"{field} : {value}", True, f"{field}"])
+            elif key in [68,100]: # Delete participant
+                if not finalized:
+                    win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
                     curses.echo()
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
-                    curses.curs_set(False)
-                    db.participants.update_one({"_id":participant_id},{ "$set": { menu_items[selected_index][2] : val } } )
-                    db_result = db.participants.find_one({"_id":participant_id})
-                    menu_items = []
-                    for field, value in db_result.items():
-                        if field in ["_id", "event_id"]:
-                            menu_items.append([f"{field} : {value}", False]) # IDs not editable
-                        else:
-                            menu_items.append([f"{field} : {value}", True, f"{field}"])
-        elif key in [68,100]:
-            if not finalized:
-                win.clear()
-                x,y = 0,0
-                win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
-                curses.echo()
-                val = win.getstr().decode("utf-8")
-                curses.noecho()
-                if val.lower() == "y":
-                    db.participants.delete_one({"_id" : participant_id})
-                    break
+                    if val.lower() == "y":
+                        db.participants.delete_one({"_id" : ObjectId(participant_id)})
+                        participant_edited = True
+                        break
+    if not participant_edited:
+        return 0
+    else:
+        return 1
+
 
 # Main Screen Function
 curses.wrapper(init)

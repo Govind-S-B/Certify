@@ -19,7 +19,7 @@ app = Flask(__name__)
 mongo_username = os.environ.get("DB_USERNAME")
 mongo_password = os.environ.get("DB_PASSWORD")
 mongo_host = "mongodb"  # Since you're using Docker Compose, you can use the service name as the host
-mongo_port = "50420"
+mongo_port = "27017"
 
 # Connect to MongoDB using environment variables
 client = MongoClient(f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}/")
@@ -58,12 +58,9 @@ def get_participant_info():
 @app.route('/validate/geteventinfo', methods=['GET'])
 def get_event_info():
     event_id = ObjectId(request.args.get('event_id'))
-
     # make queries
     query_result = db.events.find_one({"_id":event_id})
-
     response = query_result
-
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
@@ -84,11 +81,9 @@ def add_event():
     item['desc'] = str(request.args.get('desc'))
     item['fields'] = request.args.getlist('fields')
     item['issueDt'] = None
-
     db.events.insert_one(item)
 
     response = {"db entry status":True}
-
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
@@ -110,7 +105,7 @@ def get_events_list():
 
 # load event details
 @app.route('/admin/view/eventinfo', methods=['GET'])
-def get_events_info():
+def get_event_info_admin():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
         response = {"error": "Invalid API key"}
@@ -124,6 +119,72 @@ def get_events_info():
     r.headers['Content-Type'] = 'application/json'
     return r
 
+# load list of participants
+@app.route('/admin/view/participantslist', methods=['GET'])
+def get_participants_list():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    event_id = request.args.get('event_id')
+    # make queries
+    query_result = db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1})
+    response = list(query_result)
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+# Load Participant details
+@app.route('/admin/view/participantinfo', methods = ['GET'])
+def get_participant_info_admin():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    participant_id = ObjectId(request.args.get('participant_id'))
+    # make queries
+    query_result = db.participants.find_one({"_id" : participant_id})
+    response = query_result
+    print(response)
+    r = make_response(json.dumps(response, cls = CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+# add participant
+@app.route('/admin/add/participant', methods=['POST'])
+def add_participant():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    data_string = request.args.get("data")
+    item = json.loads(data_string)
+    db.participants.insert_one(item)
+
+    response = {"db entry status":True}
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+# add participant in bulk
+@app.route('/admin/add/participants', methods=['POST'])
+def add_participants():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    data_string = request.args.get("data")
+    items = json.loads(data_string)
+    db.participants.insert_many(items)
+
+    response = {"db entry status":True}
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
 
 ## for Figma Plugin
 
