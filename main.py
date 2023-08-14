@@ -1,10 +1,10 @@
 from pymongo import MongoClient
-from bson import ObjectId
+# from bson import ObjectId
 import curses
 import csv
 import requests
 import json
-from time import sleep
+# from time import sleep
 
 client = MongoClient("mongodb://admin:certifydb@localhost:50420/")
 db = client.certify
@@ -69,7 +69,7 @@ def print_loading_screen(win, x=0, y=0, clear=True):
     win.refresh()
 
     # Pause the execution for 0.3 seconds to simulate a loading delay
-    sleep(0.3)
+    # sleep(0.3)
 
 def main_screen(win): # View Events
     print_loading_screen(win)
