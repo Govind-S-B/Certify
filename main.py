@@ -6,8 +6,8 @@ import requests
 import json
 # from time import sleep
 
-client = MongoClient("mongodb://admin:certifydb@localhost:50420/")
-db = client.certify
+# client = MongoClient("mongodb://admin:certifydb@localhost:50420/")
+# db = client.certify
 
 # putting auth key headers like this is bad
 # fix later

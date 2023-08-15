@@ -184,7 +184,7 @@ def get_participants_list():
         response = {"error": "Invalid API key"}
         return make_response(json.dumps(response), 401)
     
-    event_id = request.args.get('event_id')
+    event_id = ObjectId(request.args.get('event_id'))
     # make queries
     query_result = db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1})
     response = list(query_result)
@@ -201,7 +201,7 @@ def get_participant_info_admin():
         return make_response(json.dumps(response), 401)
     
     participant_id = ObjectId(request.args.get('participant_id'))
-    event_id = request.args.get('event_id')
+    event_id = ObjectId(request.args.get('event_id'))
     # make queries
     query_result = db.participants.find_one({"_id" : participant_id, "event_id" : event_id})
     response = query_result
@@ -258,13 +258,13 @@ def update_participant():
 
     # Get the participant ID, event ID, field, and value from the request arguments
     participant_id = ObjectId(request.args.get('participant_id'))
-    event_id = request.args.get('event_id')
+    event_id = ObjectId(request.args.get('event_id'))
     field = str(request.args.get('field'))
     value = str(request.args.get('value'))
 
     # Update the participant's field in the database
     db.participants.update_one(
-        {"_id" : ObjectId(participant_id), "event_id" : event_id},
+        {"_id" : participant_id, "event_id" : event_id},
         { "$set": {field : value} }
     )
 
@@ -285,7 +285,7 @@ def delete_participants():
         response = {"error": "Invalid API key"}
         return make_response(json.dumps(response), 401)
     
-    event_id = request.args.get('event_id')
+    event_id = ObjectId(request.args.get('event_id'))
     db.participants.delete_many({"event_id" : event_id})
 
     response = {"db entry status":True}
@@ -303,7 +303,7 @@ def delete_participant():
     
     
     participant_id = ObjectId(request.args.get('participant_id'))
-    event_id = request.args.get('event_id')
+    event_id = ObjectId(request.args.get('event_id'))
     db.participants.delete_one({"_id" : participant_id, "event_id" : event_id})
 
     response = {"db entry status":True}
