@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+# from pymongo import MongoClient
 # from bson import ObjectId
 import curses
 import csv
@@ -397,7 +397,7 @@ def addParticipantCLI(win, event_id, fields):
         item[field] = win.getstr().decode("utf-8") 
         y+=1
 
-    json_string = json.dumps(item)
+    json_string = json.dumps(item, cls=CustomJSONEncoder)
     print_loading_screen(win)
     response = requests.post('http://localhost:8000/admin/add/participant', params = {"data": json_string}, headers = headers)
     if check_response(response, win) == 1:
@@ -429,7 +429,7 @@ def addParticipantCSV(win,event_id):
             row["event_id"] = event_id
     # db.participants.insert_many(reader)
 
-    items = json.dumps(reader)
+    items = json.dumps(reader, cls=CustomJSONEncoder)
     print_loading_screen(win)
     response = requests.post('http://localhost:8000/admin/add/participants', params = {"data": items}, headers = headers)
     if check_response(response, win) == 1:

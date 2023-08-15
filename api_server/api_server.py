@@ -46,12 +46,10 @@ def get_active_status():
 def get_participant_info():
     event_id = ObjectId(request.args.get('event_id'))
     participant_id = ObjectId(request.args.get('participant_id'))
-
     # make queries
     query_result = db.participants.find_one({"event_id":event_id,"_id" : participant_id})
 
     response = query_result
-
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
@@ -167,8 +165,8 @@ def delete_event():
         response = {"error": "Invalid API key"}
         return make_response(json.dumps(response), 401)
     
-    event_id = request.args.get('event_id')
-    db.events.delete_one({"_id" : ObjectId(event_id)})
+    event_id = ObjectId(request.args.get('event_id'))
+    db.events.delete_one({"_id" : event_id})
     db.participants.delete_many({"event_id" : event_id})
 
     response = {"db entry status":True}
@@ -205,7 +203,6 @@ def get_participant_info_admin():
     # make queries
     query_result = db.participants.find_one({"_id" : participant_id, "event_id" : event_id})
     response = query_result
-    print(response)
     r = make_response(json.dumps(response, cls = CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
@@ -219,8 +216,14 @@ def add_participant():
         return make_response(json.dumps(response), 401)
     
     data_string = request.args.get("data")
-    item = json.loads(data_string)
-    db.participants.insert_one(item)
+    participant = json.loads(data_string)
+    print(type(participant))
+    print(participant)
+    # Convert participant data back to ObjectId
+    if 'event_id' in participant:
+        participant['event_id'] = ObjectId(participant['event_id'])
+    print(participant)
+    db.participants.insert_one(participant)
 
     response = {"db entry status":True}
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
@@ -237,6 +240,10 @@ def add_participants():
     
     data_string = request.args.get("data")
     items = json.loads(data_string)
+    # Convert participant data back to ObjectId
+    for participant in items:
+        if 'event_id' in participant:
+            participant['event_id'] = ObjectId(participant['event_id'])
     db.participants.insert_many(items)
 
     response = {"db entry status":True}
@@ -267,9 +274,6 @@ def update_participant():
         {"_id" : participant_id, "event_id" : event_id},
         { "$set": {field : value} }
     )
-
-    # Print the field and value (for debugging purposes)
-    print(field, "\t", value)
 
     # Prepare the success response with status code 200
     response = {"db entry status":True}
@@ -310,6 +314,7 @@ def delete_participant():
     r = make_response(json.dumps(response, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
+
 
 
 ## for Figma Plugin
