@@ -15,6 +15,8 @@ headers = {
     "API-Auth-Key": "random_key"
     }
 
+url = "http://localhost:8000"
+
 def init(stdscr):
     # Hide the cursor
     curses.curs_set(False)
@@ -73,7 +75,7 @@ def print_loading_screen(win, x=0, y=0, clear=True):
 
 def main_screen(win): # View Events
     print_loading_screen(win)
-    response = requests.get('http://localhost:8000/admin/view/eventslist', headers=headers)
+    response = requests.get(f'{url}/event/list', headers=headers)
     if check_response(response, win) == 1: # if connected successfully
         events_list = response.json()
         selected_row_idx = 0 # initially select index
@@ -106,7 +108,7 @@ def main_screen(win): # View Events
             elif key == 43: # Register New Event
                 reg_event(win)
                 print_loading_screen(win)
-                response = requests.get('http://localhost:8000/admin/view/eventslist', headers = headers)
+                response = requests.get(f'{url}/event/list', headers = headers)
                 if check_response(response, win) == 1:
                     events_list = response.json()
 
@@ -118,7 +120,7 @@ def main_screen(win): # View Events
             elif (key in [curses.KEY_ENTER, 10, 13]) and (len(events_list)>0): # View Event
                 if view_event(win,events_list[selected_row_idx]["_id"]) == 1: # if there is any changes, update the events list
                     print_loading_screen(win)
-                    response = requests.get('http://localhost:8000/admin/view/eventslist', headers = headers)
+                    response = requests.get(f'{url}/event/list', headers = headers)
                     if check_response(response, win) == 1:
                         events_list = response.json()
                         if selected_row_idx >= len(events_list):
@@ -155,7 +157,7 @@ def reg_event(win):
     curses.curs_set(False)
 
     print_loading_screen(win)
-    response = requests.post('http://localhost:8000/admin/add/event', params = data, headers = headers)
+    response = requests.post(f'{url}/event/add', params = data, headers = headers)
     win.clear()
     if check_response(response, win) == 1:
         win.addstr(0, 0, "Added Event Successfully | Press any key to continue...", curses.color_pair(3))
@@ -164,7 +166,7 @@ def reg_event(win):
 
 def view_event(win, event_id):
     print_loading_screen(win)
-    response = requests.get('http://localhost:8000/admin/view/eventinfo', params = {"event_id" : event_id}, headers = headers)
+    response = requests.get(f'{url}/event/info', params = {"event_id" : event_id}, headers = headers)
     event_edited = False
 
     if check_response(response, win) == 1:
@@ -222,7 +224,7 @@ def view_event(win, event_id):
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
                     if val.lower() == "y":
-                        response = requests.post('http://localhost:8000/admin/update/finalize/event', params = {"event_id" : event_id}, headers = headers)
+                        response = requests.post(f'{url}/event/finalize', params = {"event_id" : event_id}, headers = headers)
                         if check_response(response, win) == 1:
                             finalized = True
                             menu_items[3][0] = f"Issue Date : {response.json()['issueDt']}"
@@ -252,11 +254,10 @@ def view_event(win, event_id):
                                     if val != "":
                                         break
                             fields_list = [item.strip() for item in val.split(',')]
-                            print(fields_list)
                             curses.noecho()
                             curses.curs_set(False)
                             # db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : fields_list } } )
-                            response = requests.post('http://localhost:8000/admin/update/event', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : fields_list}, headers = headers)
+                            response = requests.post(f'{url}/event/update', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         else:
                             y+=2
                             win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
@@ -266,7 +267,7 @@ def view_event(win, event_id):
                             curses.noecho()
                             curses.curs_set(False)
                             # db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : val } } )
-                            response = requests.post('http://localhost:8000/admin/update/event', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
+                            response = requests.post(f'{url}/event/update', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         if check_response(response, win) == 1:
                             event_edited = True #left to implement
                             y-=3
@@ -278,7 +279,7 @@ def view_event(win, event_id):
                             win.addstr(y,x,f"Event {menu_items[selected_index][2]} updated successfully | Press any key to continue...", curses.color_pair(3))
                             win.getch()
                             # db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
-                            response = requests.get('http://localhost:8000/admin/view/eventinfo', params = {"event_id" : event_id}, headers = headers)
+                            response = requests.get(f'{url}/event/info', params = {"event_id" : event_id}, headers = headers)
                             if check_response(response, win) == 1:
                                 db_result = response.json()
                                 menu_items = [  [f"Event ID : {db_result['_id']}",False],
@@ -298,7 +299,7 @@ def view_event(win, event_id):
                         # db.events.delete_one({"_id" : ObjectId(event_id)})
                         # db.participants.delete_many({"event_id" : event_id})
                         print_loading_screen(win)
-                        response = requests.delete('http://localhost:8000/admin/delete/event', params = {"event_id" : event_id}, headers = headers)
+                        response = requests.delete(f'{url}/event/delete', params = {"event_id" : event_id}, headers = headers)
                         if check_response(response, win) == 1:
                             win.clear()
                             win.addstr(0, 0, "Event Deleted Successfully | Press any key to continue...", curses.color_pair(3))
@@ -314,7 +315,7 @@ def viewParticipants(win, event_id, finalized, fields):
 
     # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
     print_loading_screen(win)
-    response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
+    response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
     if check_response(response, win) == 1:
         participants_list = response.json()
         selected_row_idx = 0 # initially select index
@@ -357,7 +358,7 @@ def viewParticipants(win, event_id, finalized, fields):
                 addParticipantCLI(win, event_id, fields)
                 # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
                 print_loading_screen(win)
-                response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
+                response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
                 if check_response(response, win) == 1:
                     participants_list = response.json()
 
@@ -365,7 +366,7 @@ def viewParticipants(win, event_id, finalized, fields):
                 addParticipantCSV(win, event_id, fields)
                 # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
                 print_loading_screen(win)
-                response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
+                response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
                 if check_response(response, win) == 1:
                     participants_list = response.json()
 
@@ -373,7 +374,7 @@ def viewParticipants(win, event_id, finalized, fields):
                 if viewParticipant(win, event_id, participants_list[selected_row_idx]["_id"], finalized) == 1: # if db updated, update the participants list
                     # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
                     print_loading_screen(win)
-                    response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
+                    response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
                     if check_response(response, win) == 1:
                         participants_list = response.json()
                         if selected_row_idx >= len(participants_list):
@@ -390,7 +391,7 @@ def viewParticipants(win, event_id, finalized, fields):
                     if val.lower() == "y":
                         # db.participants.delete_many({"event_id" : event_id})
                         print_loading_screen(win)
-                        response = requests.delete('http://localhost:8000/admin/delete/participants', params = {"event_id" : event_id}, headers = headers)
+                        response = requests.delete(f'{url}/participant/delete-batch', params = {"event_id" : event_id}, headers = headers)
                         if check_response(response, win) == 1:
                             win.clear()
                             win.addstr(0, 0, "Participants Deleted Successfully | Press any key to continue...", curses.color_pair(3))
@@ -417,7 +418,7 @@ def addParticipantCLI(win, event_id, fields):
 
     json_string = json.dumps(item)
     print_loading_screen(win)
-    response = requests.post('http://localhost:8000/admin/add/participant', params = {"data": json_string}, headers = headers)
+    response = requests.post(f'{url}/participant/add', params = {"data": json_string}, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0, 0, "Participant added successfully | Press any key to continue...", curses.color_pair(3))
@@ -454,7 +455,7 @@ def addParticipantCSV(win, event_id, fields):
 
     items = json.dumps(reader)
     print_loading_screen(win)
-    response = requests.post('http://localhost:8000/admin/add/participants', params = {"data": items}, headers = headers)
+    response = requests.post(f'{url}/participant/add-batch', params = {"data": items}, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0,0,"Participants added successfully | Press any key to continue...", curses.color_pair(3))
@@ -462,7 +463,7 @@ def addParticipantCSV(win, event_id, fields):
 
 def viewParticipant(win, event_id, participant_id, finalized):
     print_loading_screen(win)
-    response = requests.get('http://localhost:8000/admin/view/participantinfo', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
+    response = requests.get(f'{url}/participant/info', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
     if check_response(response, win) == 1:
         db_result = response.json()
         selected_index = 0
@@ -524,11 +525,11 @@ def viewParticipant(win, event_id, participant_id, finalized):
 
                         # db.participants.update_one({"_id" : ObjectId(participant_id), "event_id" : event_id},{ "$set": { menu_items[selected_index][2] : val } } )
                         print_loading_screen(win)
-                        response = requests.post('http://localhost:8000/admin/update/participant', params = {"participant_id" : participant_id, "event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
+                        response = requests.post(f'{url}/participant/update', params = {"participant_id" : participant_id, "event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         if check_response(response, win) == 1:
                             participant_is_edited = True
                             # db_result = db.participants.find_one({"_id" : ObjectId(participant_id), "event_id" : event_id})
-                            response = requests.get('http://localhost:8000/admin/view/participantinfo', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
+                            response = requests.get(f'{url}/participant/info', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
                             if check_response(response, win) == 1:
                                 db_result = response.json()
                                 menu_items = []
@@ -546,7 +547,7 @@ def viewParticipant(win, event_id, participant_id, finalized):
                     curses.noecho()
                     if val.lower() == "y":
                         # db.participants.delete_one({"_id" : ObjectId(participant_id), "event_id" : event_id})
-                        response = requests.delete('http://localhost:8000/admin/delete/participant', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
+                        response = requests.delete(f'{url}/participant/delete', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
                         if check_response(response, win) == 1:
                             participant_is_edited = True
                             break

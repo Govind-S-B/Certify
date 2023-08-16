@@ -28,9 +28,10 @@ db = client.certify
 api_auth_key = os.environ.get("API_AUTH_KEY")
 
 
-## for Status Check
+## STATUS
 
-@app.route('/active', methods=['GET'])
+# Public
+@app.route('/status', methods=['GET'])
 def get_active_status():
     response = {'active': True}
     
@@ -39,37 +40,32 @@ def get_active_status():
     return r
 
 
+## EVENT
 
-## for Validate Page
-
-@app.route('/validate/getparticipantinfo', methods=['GET'])
-def get_participant_info():
-    event_id = ObjectId(request.args.get('event_id'))
-    participant_id = ObjectId(request.args.get('participant_id'))
-    # make queries
-    query_result = db.participants.find_one({"event_id":event_id,"_id" : participant_id})
-
-    response = query_result
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
-    r.headers['Content-Type'] = 'application/json'
-    return r
-
-@app.route('/validate/geteventinfo', methods=['GET'])
+# Public
+@app.route('/event/info', methods=['GET'])
 def get_event_info():
     event_id = ObjectId(request.args.get('event_id'))
-    # make queries
     query_result = db.events.find_one({"_id":event_id})
-    response = query_result
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r = make_response(json.dumps(query_result, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
 
-
-
-## for Admin Page
+# load list of events
+@app.route('/event/list', methods=['GET'])
+def get_events_list():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    query_result = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
+    r = make_response(json.dumps(query_result, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
 
 # Add Event
-@app.route('/admin/add/event', methods=['POST'])
+@app.route('/event/add', methods=['POST'])
 def add_event():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -79,7 +75,7 @@ def add_event():
     item = {}
     item["name"] = str(request.args.get('name'))
     item['desc'] = str(request.args.get('desc'))
-    item['fields'] = request.args.getlist('fields')
+    item['fields'] =  str(request.args.get('fields')).split(',')
     item['issueDt'] = None
     db.events.insert_one(item)
 
@@ -89,7 +85,7 @@ def add_event():
     return r
 
 # Finalize Event
-@app.route('/admin/update/finalize/event', methods=['POST'])
+@app.route('/event/finalize', methods=['POST'])
 def finalize_event():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -106,7 +102,7 @@ def finalize_event():
     return r
 
 # Update Event
-@app.route('/admin/update/event', methods=['POST'])
+@app.route('/event/update', methods=['POST'])
 def update_event():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -116,7 +112,7 @@ def update_event():
     event_id = ObjectId(request.args.get('event_id'))
     field = str(request.args.get('field'))
     if field == "fields":
-        value = request.args.getlist('value')
+        value = str(request.args.get('value')).split(',')
     else:
         value = str(request.args.get('value'))
     db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { field : value } } )
@@ -126,39 +122,8 @@ def update_event():
     r.headers['Content-Type'] = 'application/json'
     return r
 
-# load list of events
-@app.route('/admin/view/eventslist', methods=['GET'])
-def get_events_list():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
-    # make queries
-    query_result = db.events.find({},{"_id":1,"name":1,"issueDt":1})
-    response = list(query_result)
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
-    r.headers['Content-Type'] = 'application/json'
-    return r
-
-# load event details
-@app.route('/admin/view/eventinfo', methods=['GET'])
-def get_event_info_admin():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
-    event_id = ObjectId(request.args.get('event_id'))
-    # make queries
-    query_result = db.events.find_one({"_id" : ObjectId(event_id)})
-    response = query_result
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
-    r.headers['Content-Type'] = 'application/json'
-    return r
-
 # Delete Event
-@app.route('/admin/delete/event', methods=['DELETE'])
+@app.route('/event/delete', methods=['DELETE'])
 def delete_event():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -174,8 +139,22 @@ def delete_event():
     r.headers['Content-Type'] = 'application/json'
     return r
 
+
+## PARTICIPANT
+
+# Public
+@app.route('/participant/info', methods=['GET'])
+def get_participant_info():
+    event_id = ObjectId(request.args.get('event_id'))
+    participant_id = ObjectId(request.args.get('participant_id'))
+    
+    query_result = db.participants.find_one({"event_id":event_id,"_id" : participant_id})
+    r = make_response(json.dumps(query_result, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
 # load list of participants
-@app.route('/admin/view/participantslist', methods=['GET'])
+@app.route('/participant/list', methods=['GET'])
 def get_participants_list():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -183,32 +162,13 @@ def get_participants_list():
         return make_response(json.dumps(response), 401)
     
     event_id = ObjectId(request.args.get('event_id'))
-    # make queries
-    query_result = db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1})
-    response = list(query_result)
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
-    r.headers['Content-Type'] = 'application/json'
-    return r
-
-# Load Participant details
-@app.route('/admin/view/participantinfo', methods = ['GET'])
-def get_participant_info_admin():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
-    participant_id = ObjectId(request.args.get('participant_id'))
-    event_id = ObjectId(request.args.get('event_id'))
-    # make queries
-    query_result = db.participants.find_one({"_id" : participant_id, "event_id" : event_id})
-    response = query_result
-    r = make_response(json.dumps(response, cls = CustomJSONEncoder))
+    query_result = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+    r = make_response(json.dumps(query_result, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
 
 # add participant
-@app.route('/admin/add/participant', methods=['POST'])
+@app.route('/participant/add', methods=['POST'])
 def add_participant():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -217,12 +177,10 @@ def add_participant():
     
     data_string = request.args.get("data")
     participant = json.loads(data_string)
-    print(type(participant))
-    print(participant)
+
     # Convert participant data back to ObjectId
     if 'event_id' in participant:
         participant['event_id'] = ObjectId(participant['event_id'])
-    print(participant)
     db.participants.insert_one(participant)
 
     response = {"db entry status":True}
@@ -231,7 +189,7 @@ def add_participant():
     return r
 
 # add participant in bulk
-@app.route('/admin/add/participants', methods=['POST'])
+@app.route('/participant/add-batch', methods=['POST'])
 def add_participants():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -240,6 +198,7 @@ def add_participants():
     
     data_string = request.args.get("data")
     items = json.loads(data_string)
+
     # Convert participant data back to ObjectId
     for participant in items:
         if 'event_id' in participant:
@@ -252,7 +211,7 @@ def add_participants():
     return r
 
 # Update Participant
-@app.route('/admin/update/participant', methods=['POST'])
+@app.route('/participant/update', methods=['POST'])
 def update_participant():
     # Get the provided API key from the request headers
     provided_key = request.headers.get("API-Auth-Key")
@@ -281,24 +240,8 @@ def update_participant():
     r.headers['Content-Type'] = 'application/json'
     return r
 
-# Delete Participants in bulk
-@app.route('/admin/delete/participants', methods=['DELETE'])
-def delete_participants():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
-    event_id = ObjectId(request.args.get('event_id'))
-    db.participants.delete_many({"event_id" : event_id})
-
-    response = {"db entry status":True}
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
-    r.headers['Content-Type'] = 'application/json'
-    return r
-
 # Delete Participant
-@app.route('/admin/delete/participant', methods=['DELETE'])
+@app.route('/participant/delete', methods=['DELETE'])
 def delete_participant():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -315,11 +258,26 @@ def delete_participant():
     r.headers['Content-Type'] = 'application/json'
     return r
 
+# Delete Participants in bulk
+@app.route('/participant/delete-batch', methods=['DELETE'])
+def delete_participants():
+    provided_key = request.headers.get("API-Auth-Key")
+    if provided_key != api_auth_key:
+        response = {"error": "Invalid API key"}
+        return make_response(json.dumps(response), 401)
+    
+    event_id = ObjectId(request.args.get('event_id'))
+    db.participants.delete_many({"event_id" : event_id})
+
+    response = {"db entry status":True}
+    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
+    r.headers['Content-Type'] = 'application/json'
+    return r
 
 
-## for Figma Plugin
+## PLUGIN
 
-@app.route("/plugin/getgeninfo", methods=['GET'])
+@app.route("/plugin/gen-info", methods=['GET'])
 def get_gen_info():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -379,5 +337,3 @@ def get_gen_info():
     r.headers.add('Access-Control-Allow-Origin', '*')
     return r
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=6969)

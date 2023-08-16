@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Dev",
+    "variables": [
+      {
+        "key": "url",
+        "value": "http://localhost:8000"
+      },
+      {
+        "key": "api_key",
+        "value": "random_key"
+      },
+      {
+        "key": "e_id",
+        "value": "64dc5751e6a352fcc98eba41"
+      },
+      {
+        "key": "p_id",
+        "value": "64dc5765ae2333d227686d3f"
+      }
+    ]
+  }
+]
