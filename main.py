@@ -39,7 +39,7 @@ def check_response(response, win, x=0, y=0, message=None):
     - win: the window object to display the message
     - x: the x-coordinate of the message position (default is 0)
     - y: the y-coordinate of the message position (default is 0)
-    - custom_error_message: a custom error message to display (default is None)
+    - message: a custom error message to display (default is None)
 
     Returns:
     - 0 if unable to connect to the server
@@ -141,9 +141,14 @@ def reg_event(win):
     win.addstr(y, x, "Fields - seperated by commas(,) : ", curses.color_pair(1))
     val = win.getstr().decode("utf-8")
     if val == "":
-        fields_list = []
-    else:
-        fields_list = [item.strip() for item in val.split(',')]
+        # fields_list = []
+        y+=1
+        win.addstr(y, x, "Atleast one field is required!", curses.color_pair(3))
+        while True:
+            val = win.getstr(y-1, 34).decode("utf-8")
+            if val != "":
+                break
+    fields_list = [item.strip() for item in val.split(',')]
     data["fields"] = fields_list
     y+=2
     curses.noecho()
@@ -233,18 +238,23 @@ def view_event(win, event_id):
                         if selected_index == 4:
                             # for updating fields
                             y+=2
-                            win.addstr(y,x,"## 'name' and 'event_id' are present as default fields and cannot be deleted ##", curses.color_pair(3))
+                            win.addstr(y,x,"## 'event_id' is present as a default field and cannot be deleted ##", curses.color_pair(3))
                             y+=1
                             win.addstr(y,x,"Enter required fields seperated by commas(,) : ", curses.color_pair(2))
                             curses.curs_set(True)
                             curses.echo()
                             val = win.getstr().decode("utf-8")
+                            if val == "":
+                                y+=1
+                                win.addstr(y, x, "Atleast one field is required!", curses.color_pair(3))
+                                while True:
+                                    val = win.getstr(y-1, 48).decode("utf-8")
+                                    if val != "":
+                                        break
+                            fields_list = [item.strip() for item in val.split(',')]
+                            print(fields_list)
                             curses.noecho()
                             curses.curs_set(False)
-                            if val == "":
-                                fields_list = []
-                            else:
-                                fields_list = [item.strip() for item in val.split(',')]
                             # db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : fields_list } } )
                             response = requests.post('http://localhost:8000/admin/update/event', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : fields_list}, headers = headers)
                         else:
@@ -258,8 +268,13 @@ def view_event(win, event_id):
                             # db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : val } } )
                             response = requests.post('http://localhost:8000/admin/update/event', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         if check_response(response, win) == 1:
-                            event_edited = True
-                            y+=1
+                            event_edited = True #left to implement
+                            y-=3
+                            for i in range(4):
+                                win.move(y, x)  # Move the cursor to the beginning of the line
+                                win.clrtoeol()  # Clear the entire line
+                                y+=1
+                            y-=4
                             win.addstr(y,x,f"Event {menu_items[selected_index][2]} updated successfully | Press any key to continue...", curses.color_pair(3))
                             win.getch()
                             # db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
@@ -307,7 +322,10 @@ def viewParticipants(win, event_id, finalized, fields):
             win.clear()
             x,y = 0,0
             if not finalized:
-                win.addstr(y, x,"Add Participant [+] | Add Via CSV [~] | Delete All Participants [D] | Go Back [Q]",curses.color_pair(1))
+                if participants_list == []:
+                    win.addstr(y, x, "Add Participant [+] | Add Via CSV [~] | Go Back [Q]",curses.color_pair(1))
+                else:
+                    win.addstr(y, x, "Add Participant [+] | Add Via CSV [~] | Delete All Participants [D] | Go Back [Q]",curses.color_pair(1))
                 y+=2
             else:
                 win.addstr(y, x,"[FINALIZED]", curses.color_pair(1))
@@ -319,12 +337,12 @@ def viewParticipants(win, event_id, finalized, fields):
             else:
                 for idx, item in enumerate(participants_list):
                     if idx == selected_row_idx:
-                        win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(2))
+                        win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(2))
                     else:
                         if finalized == False: # check finalized
-                            win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(3))
+                            win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(3))
                         else:
-                            win.addstr(y, x, f"{item['_id']} {item['name']}")
+                            win.addstr(y, x, f"{item['_id']} {item[fields[0]]}")
                     y += 1
             
             key = win.getch()
@@ -344,7 +362,7 @@ def viewParticipants(win, event_id, finalized, fields):
                     participants_list = response.json()
 
             elif key == 126 : # Register CSV
-                addParticipantCSV(win, event_id)
+                addParticipantCSV(win, event_id, fields)
                 # participants_list = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
                 print_loading_screen(win)
                 response = requests.get('http://localhost:8000/admin/view/participantslist', params = {"event_id" : event_id}, headers = headers)
@@ -409,13 +427,13 @@ def addParticipantCLI(win, event_id, fields):
     curses.curs_set(False)
 
 
-def addParticipantCSV(win,event_id):
+def addParticipantCSV(win, event_id, fields):
     curses.curs_set(True)
     curses.echo()
     win.clear()
     x,y = 0,0
 
-    win.addstr(y, x, "Enter CSV Name : ", curses.color_pair(1))
+    win.addstr(y, x, "Enter CSV File Name with extension (.csv) : ", curses.color_pair(1))
     csv_name = win.getstr().decode("utf-8") 
     y+=1
 
@@ -425,9 +443,14 @@ def addParticipantCSV(win,event_id):
     reader = []
     with open(csv_name, newline='') as csvfile: # possible error where header names dont match up , use value inside fields to cross check
         reader = list(csv.DictReader(csvfile))
+
+        headers = reader.fieldnames  # Get the headers (fields)
+
         for row in reader:
             row["event_id"] = event_id
     # db.participants.insert_many(reader)
+
+#ignore # the CSV file headers don't match with the fields for the given event. Either correct the csv file headers or edit the fields in the event details page.
 
     items = json.dumps(reader)
     print_loading_screen(win)
