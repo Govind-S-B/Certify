@@ -318,6 +318,7 @@ def viewParticipants(win, event_id, finalized, fields):
     response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
     if check_response(response, win) == 1:
         participants_list = response.json()
+        print(participants_list)
         selected_row_idx = 0 # initially select index
         while True:
             win.clear()
@@ -338,12 +339,12 @@ def viewParticipants(win, event_id, finalized, fields):
             else:
                 for idx, item in enumerate(participants_list):
                     if idx == selected_row_idx:
-                        win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(2))
+                        win.addstr(y, x, f"{item['_id']} {fields[0]}", curses.color_pair(2))
                     else:
                         if finalized == False: # check finalized
-                            win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(3))
+                            win.addstr(y, x, f"{item['_id']} {fields[0]}", curses.color_pair(3))
                         else:
-                            win.addstr(y, x, f"{item['_id']} {item[fields[0]]}")
+                            win.addstr(y, x, f"{item['_id']} {fields[0]}")
                     y += 1
             
             key = win.getch()
