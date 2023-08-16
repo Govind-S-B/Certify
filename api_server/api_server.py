@@ -75,7 +75,7 @@ def add_event():
     item = {}
     item["name"] = str(request.args.get('name'))
     item['desc'] = str(request.args.get('desc'))
-    item['fields'] = request.args.getlist('fields')
+    item['fields'] =  str(request.args.get('fields')).split(',')
     item['issueDt'] = None
     db.events.insert_one(item)
 
@@ -112,7 +112,7 @@ def update_event():
     event_id = ObjectId(request.args.get('event_id'))
     field = str(request.args.get('field'))
     if field == "fields":
-        value = request.args.getlist('value')
+        value = str(request.args.get('value')).split(',')
     else:
         value = str(request.args.get('value'))
     db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { field : value } } )

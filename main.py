@@ -141,12 +141,8 @@ def reg_event(win):
     y+=1
 
     win.addstr(y, x, "Fields - seperated by commas(,) : ", curses.color_pair(1))
-    val = win.getstr().decode("utf-8")
-    if val == "":
-        fields_list = []
-    else:
-        fields_list = [item.strip() for item in val.split(',')]
-    data["fields"] = fields_list
+    data["fields"] = win.getstr().decode("utf-8") # make sure ony comma seperated clean values pass through here
+
     y+=2
     curses.noecho()
     curses.curs_set(False)
@@ -240,15 +236,12 @@ def view_event(win, event_id):
                             win.addstr(y,x,"Enter required fields seperated by commas(,) : ", curses.color_pair(2))
                             curses.curs_set(True)
                             curses.echo()
-                            val = win.getstr().decode("utf-8")
+                            val = win.getstr().decode("utf-8") # make sure ony comma seperated clean values pass through here
                             curses.noecho()
                             curses.curs_set(False)
-                            if val == "":
-                                fields_list = []
-                            else:
-                                fields_list = [item.strip() for item in val.split(',')]
+
                             # db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : fields_list } } )
-                            response = requests.post(f'{url}/event/update', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : fields_list}, headers = headers)
+                            response = requests.post(f'{url}/event/update', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         else:
                             y+=2
                             win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
