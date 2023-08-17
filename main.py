@@ -74,6 +74,9 @@ def print_loading_screen(win, x=0, y=0, clear=True):
     # Pause the execution for 0.3 seconds to simulate a loading delay
     # sleep(0.3)
 
+def calc_x(string, total_width=20, offset=25):
+    return offset + abs(total_width - len(string)) // 2
+
 def main_screen(win): # View Events
     print_loading_screen(win)
     response = requests.get(f'{url}/event/list', headers=headers)
@@ -103,14 +106,16 @@ def main_screen(win): # View Events
                     if idx == selected_row_idx:
                         win.addstr(y, x, f"{item['_id']}", curses.color_pair(2))
                         win.addstr(y, x+25, "|", curses.color_pair(0))
-                        win.addstr(y, x+27, f"{item['name']}", curses.color_pair(2))
+                        win.addstr(y, calc_x(item['name']), f"{item['name']}", curses.color_pair(2))
                     else:
                         if item["issueDt"] == None: # check if finalized
                             win.addstr(y, x, f"{item['_id']}", curses.color_pair(3))
                             win.addstr(y, x+25, "|", curses.color_pair(0))
-                            win.addstr(y, x+27, f"{item['name']}", curses.color_pair(3))
+                            win.addstr(y, calc_x(item['name']), f"{item['name']}", curses.color_pair(3))
                         else:
-                            win.addstr(y, x, f"{item['_id']} | {item['name']}")
+                            win.addstr(y, x, f"{item['_id']}")
+                            win.addstr(y, x+25, f"|")
+                            win.addstr(y, calc_x(item['name']), f"{item['name']}")
                     y += 1
 
             key = win.getch() # keyboard input
@@ -343,31 +348,29 @@ def viewParticipants(win, event_id, finalized, fields):
                 win.addstr(y , x,"No participants added")
                 y+=1
             else:
-                total_width = 25
-                string_width = len(fields[0])
-                # Calculate the starting x-coordinate to center the string
-                field_x = 25 + (total_width - string_width) // 2
-
                 win.addstr(y, x+6, "Participant Id")
                 win.addstr(y, x+25, "|")
-                win.addstr(y, field_x, fields[0])
+                win.addstr(y, calc_x(fields[0]), fields[0])
                 y+=1
-                win.addstr(y,x,"=========================|=====================")
+                win.addstr(y,x,"=========================|====================")
                 y+=1
                 for idx, item in enumerate(participants_list):
                     if idx == selected_row_idx:
                         # win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(2))
                         win.addstr(y, x, f"{item['_id']}", curses.color_pair(2))
                         win.addstr(y, x+25, "|", curses.color_pair(0))
-                        win.addstr(y, x+27, f"{item[fields[0]]}", curses.color_pair(2))
+                        win.addstr(y, calc_x(item[fields[0]]), f"{item[fields[0]]}", curses.color_pair(2))
                     else:
                         if finalized == False: # check finalized
                             # win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(3))
                             win.addstr(y, x, f"{item['_id']}", curses.color_pair(3))
                             win.addstr(y, x+25, "|", curses.color_pair(0))
-                            win.addstr(y, x+27, f"{item[fields[0]]}", curses.color_pair(3))
+                            win.addstr(y, calc_x(item[fields[0]]), f"{item[fields[0]]}", curses.color_pair(3))
                         else:
-                            win.addstr(y, x, f"{item['_id']} | {item[fields[0]]}")
+                            # win.addstr(y, x, f"{item['_id']} | {item[fields[0]]}")
+                            win.addstr(y, x, f"{item['_id']}")
+                            win.addstr(y, x+25, "|")
+                            win.addstr(y, calc_x(item[fields[0]]), f"{item[fields[0]]}")
                     y += 1
             
             key = win.getch()
