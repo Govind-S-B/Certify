@@ -180,7 +180,7 @@ def view_event(win, event_id):
                         [f"Event Name : {db_result['name']}", True, 'name'],
                         [f"Description : {db_result['desc']}", True, 'desc'],
                         [f"Issue Date : {db_result['issueDt']}", False],
-                        [f"Participant Fields : {db_result['fields']}", True, 'fields'],]
+                        [f"Participant Fields : {', '.join(db_result['fields'])}", True, 'fields'],]
 
         while True:
             win.clear()
@@ -188,7 +188,8 @@ def view_event(win, event_id):
 
             # List event details
             if not finalized:
-                win.addstr(y, x, f"[MODIFIABLE] [F to Finalize]", curses.color_pair(1))
+                win.addstr(y, x, f"[MODIFIABLE]", curses.color_pair(3))
+                win.addstr(y, x+13, f"Finalize Event [F] | Delete Event [D] | Show Participants [S]", curses.color_pair(1))
                 y+=2
                 for idx, item in enumerate(menu_items):
                     if idx == selected_index:
@@ -201,17 +202,11 @@ def view_event(win, event_id):
                     y += 1
                 y+=1
             else:
-                win.addstr(y, x, f"[FINALIZED]", curses.color_pair(1))
+                win.addstr(y, x, f"[FINALIZED] Show Participants [S]", curses.color_pair(1))
                 y+=2
                 for item in menu_items:
                     win.addstr(y, x, item[0])
                     y += 1
-                y+=1
-
-            win.addstr(y,x,f"Show Participants [S]", curses.color_pair(1))
-            y+=1
-            if not finalized:
-                win.addstr(y,x,f"Delete Event [D]", curses.color_pair(1))
                 y+=1
 
             key = win.getch()
@@ -240,7 +235,7 @@ def view_event(win, event_id):
                         # enter new field value and update
                         if selected_index == 4:
                             # for updating fields
-                            y+=2
+                            y+=1
                             win.addstr(y,x,"## 'event_id' is present as a default field and cannot be deleted ##", curses.color_pair(3))
                             y+=1
                             win.addstr(y,x,"Enter required fields seperated by commas(,) : ", curses.color_pair(2))
@@ -260,7 +255,6 @@ def view_event(win, event_id):
                             # db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { menu_items[selected_index][2] : fields_list } } )
                             response = requests.post(f'{url}/event/update', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         else:
-                            y+=2
                             win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
                             curses.curs_set(True)
                             curses.echo()
@@ -271,12 +265,11 @@ def view_event(win, event_id):
                             response = requests.post(f'{url}/event/update', params = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         if check_response(response, win) == 1:
                             event_edited = True #left to implement
-                            y-=3
-                            for i in range(4):
-                                win.move(y, x)  # Move the cursor to the beginning of the line
-                                win.clrtoeol()  # Clear the entire line
-                                y+=1
-                            y-=4
+                            y-=1
+                            # for i in range(4):
+                            win.move(y, x)  # Move the cursor to the beginning of the line
+                            win.clrtoeol()  # Clear the entire line
+                            y+=1
                             win.addstr(y,x,f"Event {menu_items[selected_index][2]} updated successfully | Press any key to continue...", curses.color_pair(3))
                             win.getch()
                             # db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
@@ -287,7 +280,7 @@ def view_event(win, event_id):
                                                 [f"Event Name : {db_result['name']}",True,'name'],
                                                 [f"Description : {db_result['desc']}",True,'desc'],
                                                 [f"Issue Date : {db_result['issueDt']}",False],
-                                                [f"Participant Fields : {db_result['fields']}",True,'fields']]
+                                                [f"Participant Fields : {', '.join(db_result['fields'])}",True,'fields']]
                             
             elif key in [100, 68]:
                 if not finalized:
@@ -333,6 +326,7 @@ def viewParticipants(win, event_id, finalized, fields):
                 win.addstr(y, x,"[FINALIZED]", curses.color_pair(1))
                 y+=2
 
+            print(participants_list)
             if participants_list == []:
                 win.addstr(y , x,"No participants added")
                 y+=1

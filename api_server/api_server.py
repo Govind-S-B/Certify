@@ -162,7 +162,7 @@ def get_participants_list():
         return make_response(json.dumps(response), 401)
     
     event_id = ObjectId(request.args.get('event_id'))
-    query_result = list(db.participants.find({"event_id" : event_id},{"_id" : 1, "name":1}))
+    query_result = list(db.participants.find({"event_id" : event_id}))
     r = make_response(json.dumps(query_result, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
