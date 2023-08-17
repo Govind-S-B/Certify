@@ -4,6 +4,7 @@ import curses
 import csv
 import requests
 import json
+from collections import Counter
 # from time import sleep
 
 # client = MongoClient("mongodb://admin:certifydb@localhost:50420/")
@@ -219,7 +220,7 @@ def view_event(win, event_id):
             elif key == 70 or key == 102: # Finalise
                 if not finalized:
                     y+=1
-                    win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                    win.addstr(y,x,"Are you sure? [Y/n] : ", curses.color_pair(2))
                     curses.echo()
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
@@ -291,7 +292,7 @@ def view_event(win, event_id):
             elif key in [100, 68]:
                 if not finalized:
                     y+=1
-                    win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                    win.addstr(y,x,"Are you sure? [Y/n] : ", curses.color_pair(2))
                     curses.echo()
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
@@ -318,7 +319,6 @@ def viewParticipants(win, event_id, finalized, fields):
     response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
     if check_response(response, win) == 1:
         participants_list = response.json()
-        print(participants_list)
         selected_row_idx = 0 # initially select index
         while True:
             win.clear()
@@ -339,12 +339,12 @@ def viewParticipants(win, event_id, finalized, fields):
             else:
                 for idx, item in enumerate(participants_list):
                     if idx == selected_row_idx:
-                        win.addstr(y, x, f"{item['_id']} {fields[0]}", curses.color_pair(2))
+                        win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(2))
                     else:
                         if finalized == False: # check finalized
-                            win.addstr(y, x, f"{item['_id']} {fields[0]}", curses.color_pair(3))
+                            win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(3))
                         else:
-                            win.addstr(y, x, f"{item['_id']} {fields[0]}")
+                            win.addstr(y, x, f"{item['_id']} {item[fields[0]]}")
                     y += 1
             
             key = win.getch()
@@ -385,7 +385,7 @@ def viewParticipants(win, event_id, finalized, fields):
                 if not finalized:
                     win.clear()
                     x,y = 0,0
-                    win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                    win.addstr(y,x,"Are you sure? [Y/n] : ", curses.color_pair(2))
                     curses.echo()
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
@@ -407,9 +407,9 @@ def addParticipantCLI(win, event_id, fields):
     win.clear()
     x,y = 0,0
     item = {}
-    win.addstr(y,x,"Name : ", curses.color_pair(1))
-    item["name"] = win.getstr().decode("utf-8") 
-    y+=1
+    # win.addstr(y,x,"Name : ", curses.color_pair(1))
+    # item["name"] = win.getstr().decode("utf-8") 
+    # y+=1
     item["event_id"] = event_id
     
     for field in fields:
@@ -434,7 +434,8 @@ def addParticipantCSV(win, event_id, fields):
     curses.echo()
     win.clear()
     x,y = 0,0
-
+    win.addstr(y, x, f"The CSV file should have the following fields : {', '.join(fields)}", curses.color_pair(1))
+    y+=2
     win.addstr(y, x, "Enter CSV File Name with extension (.csv) : ", curses.color_pair(1))
     csv_name = win.getstr().decode("utf-8") 
     y+=1
@@ -442,19 +443,34 @@ def addParticipantCSV(win, event_id, fields):
     curses.curs_set(False)
     curses.noecho()
 
-    reader = []
-    with open(csv_name, newline='') as csvfile: # possible error where header names dont match up , use value inside fields to cross check
-        reader = list(csv.DictReader(csvfile))
+    reader_list = []
+    try:
+        with open(csv_name, newline='') as csvfile: # possible error where header names dont match up , use value inside fields to cross check
+            reader = csv.DictReader(csvfile)
+            reader_list = list(reader)
 
-        headers = reader.fieldnames  # Get the headers (fields)
+            csv_headers = reader.fieldnames  # Get the headers from csv file(fields)
+            if Counter(csv_headers) != Counter(fields):
+                win.clear()
+                win.addstr(0, 0, "Error:", curses.color_pair(3))
+                win.addstr(0, 7, "CSV file headers don't match with the fields for the given event. Either correct the csv file headers or edit the fields in the Event details page.", curses.color_pair(1))
+                win.addstr(2, 0, "Press any key to continue...", curses.color_pair(3))
+                win.getch()
+                return
 
-        for row in reader:
-            row["event_id"] = event_id
+            for row in reader_list:
+                row["event_id"] = event_id
+    except FileNotFoundError:
+        win.clear()
+        win.addstr(0, 0, "Error:", curses.color_pair(3))
+        win.addstr(0, 7, "File not found! Check the file name and make sure that the file is present in the same directory.", curses.color_pair(1))
+        win.addstr(2, 0, "Press any key to continue...", curses.color_pair(3))
+        win.getch()
+        return
     # db.participants.insert_many(reader)
 
-#ignore # the CSV file headers don't match with the fields for the given event. Either correct the csv file headers or edit the fields in the event details page.
 
-    items = json.dumps(reader)
+    items = json.dumps(reader_list)
     print_loading_screen(win)
     response = requests.post(f'{url}/participant/add-batch', params = {"data": items}, headers = headers)
     if check_response(response, win) == 1:
@@ -542,7 +558,7 @@ def viewParticipant(win, event_id, participant_id, finalized):
 
             elif key in [68,100]: # Delete participant
                 if not finalized:
-                    win.addstr(y,x,"Are you sure? [y/n] : ", curses.color_pair(2))
+                    win.addstr(y,x,"Are you sure? [Y/n] : ", curses.color_pair(2))
                     curses.echo()
                     val = win.getstr().decode("utf-8")
                     curses.noecho()
