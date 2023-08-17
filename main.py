@@ -457,7 +457,7 @@ def addParticipantCSV(win, event_id, fields):
     curses.echo()
     win.clear()
     x,y = 0,0
-    win.addstr(y, x, f"The CSV file should have the following fields : {', '.join(fields)}", curses.color_pair(1))
+    win.addstr(y, x, f"The CSV file should have the following headers : {', '.join(fields)}", curses.color_pair(1))
     y+=2
     win.addstr(y, x, "Enter CSV File Name with extension (.csv) : ", curses.color_pair(1))
     csv_name = win.getstr().decode("utf-8") 
