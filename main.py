@@ -84,7 +84,7 @@ def main_screen(win): # View Events
         while True: # loop for main page navigation
             win.clear()
             x , y = 0,0
-            win.addstr(y,x,"======= Certify CLI v1.0 =======", curses.color_pair(1))
+            win.addstr(y,x,"================= Certify CLI v1.0 ==========================", curses.color_pair(1))
             y+=1
             win.addstr(y, x,"Navigate [up/down arrows] | Register New Event [+] | Quit [q]", curses.color_pair(1))
             y+=2
@@ -93,14 +93,24 @@ def main_screen(win): # View Events
                 win.addstr(y,x,"No events registered")
                 y+=1
             else:
+                win.addstr(y,x+8,"Event Id")
+                win.addstr(y,x+25,"|")
+                win.addstr(y,x+32,"Event Name")
+                y+=1
+                win.addstr(y,x,"=========================|=====================")
+                y+=1
                 for idx, item in enumerate(events_list):
                     if idx == selected_row_idx:
-                        win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(2))
+                        win.addstr(y, x, f"{item['_id']}", curses.color_pair(2))
+                        win.addstr(y, x+25, "|", curses.color_pair(0))
+                        win.addstr(y, x+27, f"{item['name']}", curses.color_pair(2))
                     else:
                         if item["issueDt"] == None: # check if finalized
-                            win.addstr(y, x, f"{item['_id']} {item['name']}", curses.color_pair(3))
+                            win.addstr(y, x, f"{item['_id']}", curses.color_pair(3))
+                            win.addstr(y, x+25, "|", curses.color_pair(0))
+                            win.addstr(y, x+27, f"{item['name']}", curses.color_pair(3))
                         else:
-                            win.addstr(y, x, f"{item['_id']} {item['name']}")
+                            win.addstr(y, x, f"{item['_id']} | {item['name']}")
                     y += 1
 
             key = win.getch() # keyboard input
@@ -188,8 +198,8 @@ def view_event(win, event_id):
 
             # List event details
             if not finalized:
-                win.addstr(y, x, f"[MODIFIABLE]", curses.color_pair(3))
-                win.addstr(y, x+13, f"Finalize Event [F] | Delete Event [D] | Show Participants [S]", curses.color_pair(1))
+                win.addstr(y, x, f"*MODIFIABLE*", curses.color_pair(3))
+                win.addstr(y, x+14, f"Finalize Event [F] | Delete Event [D] | Show Participants [S]", curses.color_pair(1))
                 y+=2
                 for idx, item in enumerate(menu_items):
                     if idx == selected_index:
@@ -202,7 +212,7 @@ def view_event(win, event_id):
                     y += 1
                 y+=1
             else:
-                win.addstr(y, x, f"[FINALIZED] Show Participants [S]", curses.color_pair(1))
+                win.addstr(y, x, f"*FINALIZED*  Show Participants [S]", curses.color_pair(1))
                 y+=2
                 for item in menu_items:
                     win.addstr(y, x, item[0])
@@ -269,7 +279,8 @@ def view_event(win, event_id):
                             # for i in range(4):
                             win.move(y, x)  # Move the cursor to the beginning of the line
                             win.clrtoeol()  # Clear the entire line
-                            y+=1
+                            win.move(y+1, x)
+                            win.clrtoeol()
                             win.addstr(y,x,f"Event {menu_items[selected_index][2]} updated successfully | Press any key to continue...", curses.color_pair(3))
                             win.getch()
                             # db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
@@ -318,27 +329,45 @@ def viewParticipants(win, event_id, finalized, fields):
             x,y = 0,0
             if not finalized:
                 if participants_list == []:
-                    win.addstr(y, x, "Add Participant [+] | Add Via CSV [~] | Go Back [Q]",curses.color_pair(1))
+                    win.addstr(y, x, f"*MODIFIABLE*", curses.color_pair(3))
+                    win.addstr(y, x+14, f"Add Participant [+] | Add Via CSV [~] | Go Back [Q]", curses.color_pair(1))
                 else:
-                    win.addstr(y, x, "Add Participant [+] | Add Via CSV [~] | Delete All Participants [D] | Go Back [Q]",curses.color_pair(1))
+                    win.addstr(y, x, f"*MODIFIABLE*", curses.color_pair(3))
+                    win.addstr(y, x+14, "Add Participant [+] | Add Via CSV [~] | Delete All Participants [D] | Go Back [Q]",curses.color_pair(1))
                 y+=2
             else:
-                win.addstr(y, x,"[FINALIZED]", curses.color_pair(1))
+                win.addstr(y, x,"*FINALIZED*  Go Back [Q]", curses.color_pair(1))
                 y+=2
 
-            print(participants_list)
             if participants_list == []:
                 win.addstr(y , x,"No participants added")
                 y+=1
             else:
+                total_width = 25
+                string_width = len(fields[0])
+                # Calculate the starting x-coordinate to center the string
+                field_x = 25 + (total_width - string_width) // 2
+
+                win.addstr(y, x+6, "Participant Id")
+                win.addstr(y, x+25, "|")
+                win.addstr(y, field_x, fields[0])
+                y+=1
+                win.addstr(y,x,"=========================|=====================")
+                y+=1
                 for idx, item in enumerate(participants_list):
                     if idx == selected_row_idx:
-                        win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(2))
+                        # win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(2))
+                        win.addstr(y, x, f"{item['_id']}", curses.color_pair(2))
+                        win.addstr(y, x+25, "|", curses.color_pair(0))
+                        win.addstr(y, x+27, f"{item[fields[0]]}", curses.color_pair(2))
                     else:
                         if finalized == False: # check finalized
-                            win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(3))
+                            # win.addstr(y, x, f"{item['_id']} {item[fields[0]]}", curses.color_pair(3))
+                            win.addstr(y, x, f"{item['_id']}", curses.color_pair(3))
+                            win.addstr(y, x+25, "|", curses.color_pair(0))
+                            win.addstr(y, x+27, f"{item[fields[0]]}", curses.color_pair(3))
                         else:
-                            win.addstr(y, x, f"{item['_id']} {item[fields[0]]}")
+                            win.addstr(y, x, f"{item['_id']} | {item[fields[0]]}")
                     y += 1
             
             key = win.getch()
@@ -492,7 +521,8 @@ def viewParticipant(win, event_id, participant_id, finalized):
             x,y = 0,0
 
             if not finalized:
-                win.addstr(y, x, f"[MODIFIABLE] | Delete Participant [D] | Go Back [Q]", curses.color_pair(1))
+                win.addstr(y, x, f"*MODIFIABLE*", curses.color_pair(3))
+                win.addstr(y, x+14, f"Delete Participant [D] | Go Back [Q]", curses.color_pair(1))
                 y+=2
                 for idx, item in enumerate(menu_items):
                     if idx == selected_index:
@@ -505,7 +535,7 @@ def viewParticipant(win, event_id, participant_id, finalized):
                     y += 1
                 y+=1
             else:
-                win.addstr(y, x, f"[FINALIZED] | Go Back [Q]", curses.color_pair(1))
+                win.addstr(y, x, f"*FINALIZED*  Go Back [Q]", curses.color_pair(1))
                 y+=2
                 for item in menu_items:
                     win.addstr(y, x, item[0])
