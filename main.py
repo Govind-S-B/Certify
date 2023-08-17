@@ -106,16 +106,16 @@ def main_screen(win): # View Events
                     if idx == selected_row_idx:
                         win.addstr(y, x, f"{item['_id']}", curses.color_pair(2))
                         win.addstr(y, x+25, "|", curses.color_pair(0))
-                        win.addstr(y, calc_x(item['name']), f"{item['name']}", curses.color_pair(2))
+                        win.addstr(y, calc_x(item['name'], offset=26), f"{item['name']}", curses.color_pair(2))
                     else:
                         if item["issueDt"] == None: # check if finalized
                             win.addstr(y, x, f"{item['_id']}", curses.color_pair(3))
                             win.addstr(y, x+25, "|", curses.color_pair(0))
-                            win.addstr(y, calc_x(item['name']), f"{item['name']}", curses.color_pair(3))
+                            win.addstr(y, calc_x(item['name'], offset=26), f"{item['name']}", curses.color_pair(3))
                         else:
                             win.addstr(y, x, f"{item['_id']}")
                             win.addstr(y, x+25, f"|")
-                            win.addstr(y, calc_x(item['name']), f"{item['name']}")
+                            win.addstr(y, calc_x(item['name'], offset=26), f"{item['name']}")
                     y += 1
 
             key = win.getch() # keyboard input
