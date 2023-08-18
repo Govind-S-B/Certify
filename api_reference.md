@@ -6,6 +6,7 @@ This guide provides information about the available API endpoints, their functio
 Additionally, you can access the Hoppscotch API collections export from [here](https://github.com/Govind-S-B/Certify/blob/main/api_server/hoppscotch_api_test.json) documentation, allowing you to import and conduct thorough API testing firsthand.
 
 ## Overview
+![image](https://github.com/Govind-S-B/Certify/assets/62943847/4e05d88b-46a2-4363-ab14-70893d128902)
 
 The base URL for all API endpoints is the same and configurable on the dockerfile
 
