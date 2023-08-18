@@ -15,8 +15,8 @@ Best thing is its all self hosted so no worries about your data being exposed.
 
 ## Quick Start Guide
 
-For detailed instructions on setting up and using Certify, refer to our [Quick Start Guide]().
+For detailed instructions on setting up and using Certify, refer to our [Quick Start Guide](https://github.com/Govind-S-B/Certify/blob/main/get_started_dev.md).
 
 ## API Reference Guide
 
-If you're interested in integrating Certify into your existing systems or creating custom workflows, consult our [API Reference Guide]() for comprehensive information on how to interact with Certify programmatically.
+If you're interested in integrating Certify into your existing systems or creating custom workflows, consult our [API Reference Guide](https://github.com/Govind-S-B/Certify/blob/main/api_reference.md) for comprehensive information on how to interact with Certify programmatically.
