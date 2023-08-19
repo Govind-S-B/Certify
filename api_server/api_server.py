@@ -72,10 +72,12 @@ def add_event():
         response = {"error": "Invalid API key"}
         return make_response(json.dumps(response), 401)
     
+    response_body = request.get_json()
+
     item = {}
-    item["name"] = str(request.args.get('name'))
-    item['desc'] = str(request.args.get('desc'))
-    item['fields'] =  str(request.args.get('fields')).split(',')
+    item["name"] = response_body['name']
+    item['desc'] = response_body['desc']
+    item['fields'] =  response_body['fields']
     item['issueDt'] = None
     db.events.insert_one(item)
 
@@ -91,8 +93,10 @@ def finalize_event():
     if provided_key != api_auth_key:
         response = {"error": "Invalid API key"}
         return make_response(json.dumps(response), 401)
+    
+    response_body = request.get_json()
 
-    event_id = ObjectId(request.args.get('event_id'))
+    event_id = ObjectId(response_body['event_id'])
     issueDt = datetime.now()
     db.events.update_one({"_id":event_id},{ "$set": { "issueDt": issueDt } } )
 
@@ -108,13 +112,15 @@ def update_event():
     if provided_key != api_auth_key:
         response = {"error": "Invalid API key"}
         return make_response(json.dumps(response), 401)
+    
+    response_body = request.get_json()
 
-    event_id = ObjectId(request.args.get('event_id'))
-    field = str(request.args.get('field'))
+    event_id = ObjectId(response_body['event_id'])
+    field = response_body['field']
     if field == "fields":
-        value = str(request.args.get('value')).split(',')
+        value = response_body['value'] # this should be a list
     else:
-        value = str(request.args.get('value'))
+        value = response_body['value']
     db.events.update_one({"_id" : ObjectId(event_id)},{ "$set": { field : value } } )
 
     response = {"db entry status":True}
@@ -175,9 +181,7 @@ def add_participants():
         response = {"error": "Invalid API key"}
         return make_response(json.dumps(response), 401)
     
-    data_string = request.args.get("data")
-    items = json.loads(data_string)
-
+    items = request.get_json()
     # Convert Participant Id from string to ObjectId
     for participant in items:
         if 'event_id' in participant:
@@ -202,10 +206,13 @@ def update_participant():
         return make_response(json.dumps(response), 401)
 
     # Get the participant ID, event ID, field, and value from the request arguments
-    participant_id = ObjectId(request.args.get('participant_id'))
-    event_id = ObjectId(request.args.get('event_id'))
-    field = str(request.args.get('field'))
-    value = str(request.args.get('value'))
+
+    response_body = request.get_json()
+
+    participant_id = ObjectId(response_body['participant_id'])
+    event_id = ObjectId(response_body['event_id'])
+    field = response_body['field']
+    value = response_body['value']
 
     # Update the participant's field in the database
     db.participants.update_one(
@@ -315,4 +322,3 @@ def get_gen_info():
     r.headers['Content-Type'] = 'application/json'
     r.headers.add('Access-Control-Allow-Origin', '*')
     return r
-
