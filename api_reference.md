@@ -6,7 +6,26 @@ This guide provides information about the available API endpoints, their functio
 Additionally, you can access the Hoppscotch API collections export from [here](https://github.com/Govind-S-B/Certify/blob/main/api_server/hoppscotch_api_test.json) documentation, allowing you to import and conduct thorough API testing firsthand.
 
 ## Overview
-![image](https://github.com/Govind-S-B/Certify/assets/62943847/4e05d88b-46a2-4363-ab14-70893d128902)
+### Routes:
+
+| Method | Url                  | Description                                 |
+| ------ | -------------------- | ------------------------------------------- |
+| GET    | [status](#status)              | Get the active status of the API.           |
+| GET    | [event/list](#list-events)          | Get a list of all events.                   |
+| GET    | [event/info](#get-event-info)          | Get detailed information about an event.   |
+| POST   | [event/add](#add-event)           | Add a new event.                            |
+| POST   | [event/finalize](#finalize-event)      | Finalize an event by setting the issue date.|
+| POST   | [event/update](#update-event)        | Update an event's information.              |
+| DELETE | [event/delete](#delete-event)        | Delete an event.                            |
+| GET    | [participant/list](#list-participants)    | Get participants for a specific event.      |
+| GET    | [participant/info](#get-participant-info)    | Get detailed information about a participant. |
+| POST   | [participant/add](#add-participant)     | Add a participant to an event.              |
+| POST   | [participant/add-batch](#add-participants-in-batch) | Add multiple participants in batch.        |
+| POST   | [participant/update](#update-participant)  | Update a participant's information.         |
+| DELETE | [participant/delete](#delete-participant)  | Delete a participant.                       |
+| DELETE | [participant/delete-batch](#delete-participants-in-batch) | Delete all participants of an event in batch. |
+| GET    | [plugin/gen-info](#generate-information-for-plugin) | Generate information for a plugin.          |
+
 
 The base URL for all API endpoints is the same and configurable on the dockerfile
 
