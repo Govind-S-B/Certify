@@ -12,6 +12,12 @@ Before you start, make sure you have the following prerequisites installed on yo
 
 I will also recommend installing a distro like debian on wsl2 for ease of use
 
+Update ca-certificates in Debian
+```
+sudo apt-get update
+sudo apt-get install --reinstall ca-certificates
+```
+
 ## Clone the Repository
 
 Begin by cloning the Certify repository to your local machine:
