@@ -476,7 +476,9 @@ def addParticipantCLI(win, event_id, fields):
         "API-Auth-Key": api_key,
         "Content-Type": "application/json"
     }
-    response = requests.post(f'{url}/participant/add', json = [item], headers = headers)
+    request_body ={}
+    request_body["items"] = [item]
+    response = requests.post(f'{url}/participant/add', json = request_body, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0, 0, "Participant added successfully | Press any key to continue...", curses.color_pair(3))
@@ -533,7 +535,9 @@ def addParticipantCSV(win, event_id, fields):
         "API-Auth-Key": api_key,
         "Content-Type": "application/json"
     }
-    response = requests.post(f'{url}/participant/add', json = items, headers = headers)
+    request_body ={}
+    request_body["items"] = items
+    response = requests.post(f'{url}/participant/add', json = request_body, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0,0,"Participants added successfully | Press any key to continue...", curses.color_pair(3))

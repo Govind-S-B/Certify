@@ -181,7 +181,7 @@ def add_participants():
         response = {"error": "Invalid API key"}
         return make_response(json.dumps(response), 401)
     
-    items = request.get_json()
+    items = request.get_json()["items"]
     # Convert Participant Id from string to ObjectId
     for participant in items:
         if 'event_id' in participant:
