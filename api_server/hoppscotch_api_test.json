@@ -429,7 +429,7 @@
     "requests": [
       {
         "v": "1",
-        "endpoint": "<<url>>/participant/list",
+        "endpoint": "<<url>>/plugin/gen-info",
         "name": "gen-info",
         "params": [
           {
