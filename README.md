@@ -1,4 +1,4 @@
-# Certify: Event Certificate Management System
+# Certify: Event Certificate Management/Authentication System
 
 Certify is an open-source project designed to simplify the process of organizing events, managing participant information, generating event certificates, and ensuring their authenticity through a verification system. With Certify, you can streamline the certificate issuance process while also enhancing security by providing verifiable certificates.
 
