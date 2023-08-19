@@ -77,24 +77,8 @@
       {
         "v": "1",
         "endpoint": "<<url>>/event/add",
-        "name": "add [ NEED REVIEW ]",
-        "params": [
-          {
-            "key": "name",
-            "value": "HoppScotch 1",
-            "active": true
-          },
-          {
-            "key": "desc",
-            "value": "api endpoint testing event",
-            "active": true
-          },
-          {
-            "key": "fields",
-            "value": "name,age",
-            "active": true
-          }
-        ],
+        "name": "add",
+        "params": [],
         "headers": [],
         "method": "POST",
         "auth": {
@@ -108,20 +92,14 @@
         "testScript": "",
         "body": {
           "contentType": "application/json",
-          "body": "{\n\n  \"name\":\"biswa\"\n  \n}"
+          "body": "{\n  \"name\":\"Event Name\",\n  \"desc\":\"Event Description\",\n  \"fields\":[\"field1\",\"field2\"]\n}"
         }
       },
       {
         "v": "1",
         "endpoint": "<<url>>/event/finalize",
         "name": "finalize",
-        "params": [
-          {
-            "key": "event_id",
-            "value": "<<e_id>>",
-            "active": true
-          }
-        ],
+        "params": [],
         "headers": [],
         "method": "POST",
         "auth": {
@@ -134,31 +112,15 @@
         "preRequestScript": "",
         "testScript": "",
         "body": {
-          "contentType": null,
-          "body": null
+          "contentType": "application/json",
+          "body": "{\n  \"event_id\": \"<<e_id>>\"\n}"
         }
       },
       {
         "v": "1",
         "endpoint": "<<url>>/event/update",
-        "name": "update [ NEED REVIEW ]",
-        "params": [
-          {
-            "key": "event_id",
-            "value": "<<e_id>>",
-            "active": true
-          },
-          {
-            "key": "field",
-            "value": "fields",
-            "active": true
-          },
-          {
-            "key": "value",
-            "value": "blee,bloo,bloop",
-            "active": true
-          }
-        ],
+        "name": "update",
+        "params": [],
         "headers": [],
         "method": "POST",
         "auth": {
@@ -171,8 +133,8 @@
         "preRequestScript": "",
         "testScript": "",
         "body": {
-          "contentType": null,
-          "body": null
+          "contentType": "application/json",
+          "body": "{\n  \"event_id\":\"<<e_id>>\",\n  \"field\":\"field name\",\n  \"value\":\"new value\"\n}"
         }
       },
       {
@@ -268,83 +230,8 @@
       {
         "v": "1",
         "endpoint": "<<url>>/participant/add",
-        "name": "add [ NEED TO FIX ]",
-        "params": [
-          {
-            "key": "event_id",
-            "value": "<<e_id>>",
-            "active": true
-          }
-        ],
-        "headers": [],
-        "method": "GET",
-        "auth": {
-          "authType": "api-key",
-          "authActive": true,
-          "key": "API-Auth-Key",
-          "value": "<<api_key>>",
-          "addTo": "Headers"
-        },
-        "preRequestScript": "",
-        "testScript": "",
-        "body": {
-          "contentType": null,
-          "body": null
-        }
-      },
-      {
-        "v": "1",
-        "endpoint": "<<url>>/participant/list",
-        "name": "add-batch [NEED TO FIX]",
-        "params": [
-          {
-            "key": "event_id",
-            "value": "<<e_id>>",
-            "active": true
-          }
-        ],
-        "headers": [],
-        "method": "GET",
-        "auth": {
-          "authType": "api-key",
-          "authActive": true,
-          "key": "API-Auth-Key",
-          "value": "<<api_key>>",
-          "addTo": "Headers"
-        },
-        "preRequestScript": "",
-        "testScript": "",
-        "body": {
-          "contentType": null,
-          "body": null
-        }
-      },
-      {
-        "v": "1",
-        "endpoint": "<<url>>/participant/update",
-        "name": "update",
-        "params": [
-          {
-            "key": "event_id",
-            "value": "<<e_id>>",
-            "active": true
-          },
-          {
-            "key": "participant_id",
-            "value": "<<p_id>>",
-            "active": true
-          },
-          {
-            "key": "field",
-            "value": "name",
-            "active": true
-          },
-          {
-            "key": "value",
-            "value": "Bimy",
-            "active": true
-          }
-        ],
+        "name": "add",
+        "params": [],
         "headers": [],
         "method": "POST",
         "auth": {
@@ -357,8 +244,29 @@
         "preRequestScript": "",
         "testScript": "",
         "body": {
-          "contentType": null,
-          "body": null
+          "contentType": "application/json",
+          "body": "{\n  \"items\": [\n    {\n      \"event_id\": \"<<e_id>>\",\n      \"field1\": \"value1 1\",\n      \"field2\": \"value2 1\"\n    },\n    {\n      \"event_id\": \"<<e_id>>\",\n      \"field1\": \"value1 2\",\n      \"field2\": \"value2 2\"\n    },\n    {\n      \"event_id\": \"<<e_id>>\",\n      \"field1\": \"value1 3\",\n      \"field2\": \"value2 3\"\n    }\n  ]\n}"
+        }
+      },
+      {
+        "v": "1",
+        "endpoint": "<<url>>/participant/update",
+        "name": "update",
+        "params": [],
+        "headers": [],
+        "method": "POST",
+        "auth": {
+          "authType": "api-key",
+          "authActive": true,
+          "key": "API-Auth-Key",
+          "value": "<<api_key>>",
+          "addTo": "Headers"
+        },
+        "preRequestScript": "",
+        "testScript": "",
+        "body": {
+          "contentType": "application/json",
+          "body": "{\n  \"event_id\":\"<<e_id>>\",\n  \"participant_id\":\"<<p_id>>\",\n  \"field\":\"field name\",\n  \"value\":\"new value\"\n}"
         }
       },
       {
