@@ -2,7 +2,6 @@ import curses
 import csv
 import requests
 from collections import Counter
-import json
 
 url = "http://localhost:8000"
 api_key = "random_key"
@@ -472,13 +471,12 @@ def addParticipantCLI(win, event_id, fields):
         item[field] = win.getstr().decode("utf-8") 
         y+=1
 
-    json_string = json.dumps([item])
     print_loading_screen(win)
     headers = {
         "API-Auth-Key": api_key,
         "Content-Type": "application/json"
     }
-    response = requests.post(f'{url}/participant/add', json = item, headers = headers)
+    response = requests.post(f'{url}/participant/add', json = [item], headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0, 0, "Participant added successfully | Press any key to continue...", curses.color_pair(3))
@@ -535,7 +533,7 @@ def addParticipantCSV(win, event_id, fields):
         "API-Auth-Key": api_key,
         "Content-Type": "application/json"
     }
-    response = requests.post(f'{url}/participant/add-batch', json = items, headers = headers)
+    response = requests.post(f'{url}/participant/add', json = items, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0,0,"Participants added successfully | Press any key to continue...", curses.color_pair(3))
