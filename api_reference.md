@@ -19,8 +19,7 @@ Additionally, you can access the Hoppscotch API collections export from [here](h
 | DELETE | [event/delete](#delete-event)        | Delete an event.                            |
 | GET    | [participant/list](#list-participants)    | Get participants for a specific event.      |
 | GET    | [participant/info](#get-participant-info)    | Get detailed information about a participant. |
-| POST   | [participant/add](#add-participant)     | Add a participant to an event.              |
-| POST   | [participant/add-batch](#add-participants-in-batch) | Add multiple participants in batch.        |
+| POST   | [participant/add](#add-participant)     | Add participants to an event.              |
 | POST   | [participant/update](#update-participant)  | Update a participant's information.         |
 | DELETE | [participant/delete](#delete-participant)  | Delete a participant.                       |
 | DELETE | [participant/delete-batch](#delete-participants-in-batch) | Delete all participants of an event in batch. |
@@ -230,30 +229,7 @@ The base URL for all API endpoints is the same and configurable on the dockerfil
 
 **Endpoint:** `/participant/add`
 
-**Description:** Add a participant to an event.
-
-**Method:** POST
-
-**Request Body:**
-```
-{
-  "event_id": "event_id",
-  "field1": "value1",
-  "field2": "value2"
-}
-```
-**Response Format:**
-```
-{
-  "db entry status": true
-}
-```
-
-### Add Participants in Batch
-
-**Endpoint:** `/participant/add-batch`
-
-**Description:** Add multiple participants to an event in batch.
+**Description:** Add participants to an event. This can be single or multiple , but must be passed into items as an array
 
 **Method:** POST
 
