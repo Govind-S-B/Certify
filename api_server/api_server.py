@@ -183,13 +183,8 @@ def add_participants():
 
 # Update Participant
 @app.route('/participant/update', methods=['POST'])
+@authenticate
 def update_participant():
-    @authenticate
-    # Get the provided API key from the request headers
-        # If the keys don't match, return an error response with status code 401
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-
     # Get the participant ID, event ID, field, and value from the request arguments
 
     response_body = request.get_json()
