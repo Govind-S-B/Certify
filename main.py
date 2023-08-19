@@ -2,6 +2,7 @@ import curses
 import csv
 import requests
 from collections import Counter
+import json
 
 url = "http://localhost:8000"
 api_key = "random_key"
