@@ -167,29 +167,8 @@ def get_participants_list():
     r.headers['Content-Type'] = 'application/json'
     return r
 
-# add participant
+# add participants
 @app.route('/participant/add', methods=['POST'])
-def add_participant():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
-    data_string = request.args.get("data")
-    participant = json.loads(data_string)
-
-    # Convert participant data back to ObjectId
-    if 'event_id' in participant:
-        participant['event_id'] = ObjectId(participant['event_id'])
-    db.participants.insert_one(participant)
-
-    response = {"db entry status":True}
-    r = make_response(json.dumps(response, cls=CustomJSONEncoder))
-    r.headers['Content-Type'] = 'application/json'
-    return r
-
-# add participant in bulk
-@app.route('/participant/add-batch', methods=['POST'])
 def add_participants():
     provided_key = request.headers.get("API-Auth-Key")
     if provided_key != api_auth_key:
@@ -199,7 +178,7 @@ def add_participants():
     data_string = request.args.get("data")
     items = json.loads(data_string)
 
-    # Convert participant data back to ObjectId
+    # Convert Participant Id from string to ObjectId
     for participant in items:
         if 'event_id' in participant:
             participant['event_id'] = ObjectId(participant['event_id'])

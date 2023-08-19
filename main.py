@@ -433,9 +433,6 @@ def addParticipantCLI(win, event_id, fields):
     win.clear()
     x,y = 0,0
     item = {}
-    # win.addstr(y,x,"Name : ", curses.color_pair(1))
-    # item["name"] = win.getstr().decode("utf-8") 
-    # y+=1
     item["event_id"] = event_id
     
     for field in fields:
@@ -443,7 +440,7 @@ def addParticipantCLI(win, event_id, fields):
         item[field] = win.getstr().decode("utf-8") 
         y+=1
 
-    json_string = json.dumps(item)
+    json_string = json.dumps([item])
     print_loading_screen(win)
     response = requests.post(f'{url}/participant/add', params = {"data": json_string}, headers = headers)
     if check_response(response, win) == 1:
@@ -498,7 +495,7 @@ def addParticipantCSV(win, event_id, fields):
 
     items = json.dumps(reader_list)
     print_loading_screen(win)
-    response = requests.post(f'{url}/participant/add-batch', params = {"data": items}, headers = headers)
+    response = requests.post(f'{url}/participant/add', params = {"data": items}, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0,0,"Participants added successfully | Press any key to continue...", curses.color_pair(3))
