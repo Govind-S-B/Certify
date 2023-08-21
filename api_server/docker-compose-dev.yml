@@ -7,14 +7,14 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: certifydb
     volumes:
-      - ${HOME}/mongodb/data/db:/data/db
+      - ${HOME}/certify/mongodb/data/db:/data/db
 
   api_server:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ${HOME}/certify/logs:${HOME}/certify/logs
+      - ${HOME}/certify/server_logs:${HOME}/certify/logs
     environment:
       DB_USERNAME: admin
       DB_PASSWORD: certifydb
