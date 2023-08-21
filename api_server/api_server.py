@@ -1,4 +1,5 @@
 from functools import wraps
+from flask_cors import CORS
 from flask import Flask, make_response, request
 from bson import ObjectId
 from pymongo import MongoClient
@@ -15,6 +16,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 app = Flask(__name__)
+CORS(app)
 
 # Use environment variables for MongoDB connection
 mongo_username = os.environ.get("DB_USERNAME")
@@ -281,5 +283,4 @@ def get_gen_info():
 
     r = make_response(json.dumps(result, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
-    r.headers.add('Access-Control-Allow-Origin', '*')
     return r
