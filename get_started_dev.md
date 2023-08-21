@@ -30,7 +30,7 @@ Navigate to the `api_server` directory, where all the development-related files 
 
 ## Launching the API Server
 
-Before first launching the server , run the `generate_ssl_keys.sh` script to generate self signed SSL Certificates to use . This is a one time thing .
+Before first launching the server , run the `generate_ssl_keys.sh` script with target username to generate self signed SSL Certificates to use . This is a one time thing .
 
 1.  To ensure your changes to the `api_server.py` script are reflected, it's recommended to build the Docker image. Run the following command:
     
