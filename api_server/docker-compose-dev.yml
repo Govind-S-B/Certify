@@ -15,6 +15,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ${HOME}/certify/server_logs:${HOME}/certify/logs
+      - ${HOME}/certify/ssl:/app/ssl
     environment:
       DB_USERNAME: admin
       DB_PASSWORD: certifydb

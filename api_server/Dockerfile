@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api_server.py /app/
 
 # Run the Flask application
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "api_server:app"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "--certfile", "/app/ssl/cert.pem", "--keyfile", "/app/ssl/key.pem", "api_server:app"]
