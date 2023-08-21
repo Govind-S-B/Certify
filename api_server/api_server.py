@@ -1,3 +1,4 @@
+from functools import wraps
 from flask import Flask, make_response, request
 from bson import ObjectId
 from pymongo import MongoClient
@@ -28,6 +29,16 @@ db = client.certify
 api_auth_key = os.environ.get("API_AUTH_KEY")
 
 
+def authenticate(func):
+    @wraps(func)
+    def new_func(*args, **kwargs):
+        provided_key = request.headers.get("API-Auth-Key")
+        if provided_key != api_auth_key:
+            response = {"error": "Invalid API key"}
+            return make_response(json.dumps(response), 401)
+        return func(*args, **kwargs)
+    return new_func
+
 ## STATUS
 
 # Public
@@ -53,12 +64,8 @@ def get_event_info():
 
 # load list of events
 @app.route('/event/list', methods=['GET'])
+@authenticate
 def get_events_list():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     query_result = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
     r = make_response(json.dumps(query_result, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
@@ -66,12 +73,8 @@ def get_events_list():
 
 # Add Event
 @app.route('/event/add', methods=['POST'])
+@authenticate
 def add_event():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     response_body = request.get_json()
 
     item = {}
@@ -88,12 +91,8 @@ def add_event():
 
 # Finalize Event
 @app.route('/event/finalize', methods=['POST'])
+@authenticate
 def finalize_event():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     response_body = request.get_json()
 
     event_id = ObjectId(response_body['event_id'])
@@ -107,12 +106,8 @@ def finalize_event():
 
 # Update Event
 @app.route('/event/update', methods=['POST'])
+@authenticate
 def update_event():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     response_body = request.get_json()
 
     event_id = ObjectId(response_body['event_id'])
@@ -130,12 +125,8 @@ def update_event():
 
 # Delete Event
 @app.route('/event/delete', methods=['DELETE'])
+@authenticate
 def delete_event():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     event_id = ObjectId(request.args.get('event_id'))
     db.events.delete_one({"_id" : event_id})
     db.participants.delete_many({"event_id" : event_id})
@@ -161,12 +152,8 @@ def get_participant_info():
 
 # load list of participants
 @app.route('/participant/list', methods=['GET'])
+@authenticate
 def get_participants_list():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     event_id = ObjectId(request.args.get('event_id'))
     query_result = list(db.participants.find({"event_id" : event_id}))
     r = make_response(json.dumps(query_result, cls=CustomJSONEncoder))
@@ -175,12 +162,8 @@ def get_participants_list():
 
 # add participants
 @app.route('/participant/add', methods=['POST'])
+@authenticate
 def add_participants():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     items = request.get_json()["items"]
     # Convert Participant Id from string to ObjectId
     for participant in items:
@@ -195,18 +178,9 @@ def add_participants():
 
 # Update Participant
 @app.route('/participant/update', methods=['POST'])
+@authenticate
 def update_participant():
-    # Get the provided API key from the request headers
-    provided_key = request.headers.get("API-Auth-Key")
-
-    # Check if the provided key matches the expected API key
-    if provided_key != api_auth_key:
-        # If the keys don't match, return an error response with status code 401
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-
     # Get the participant ID, event ID, field, and value from the request arguments
-
     response_body = request.get_json()
 
     participant_id = ObjectId(response_body['participant_id'])
@@ -228,13 +202,8 @@ def update_participant():
 
 # Delete Participant
 @app.route('/participant/delete', methods=['DELETE'])
+@authenticate
 def delete_participant():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
-    
     participant_id = ObjectId(request.args.get('participant_id'))
     event_id = ObjectId(request.args.get('event_id'))
     db.participants.delete_one({"_id" : participant_id, "event_id" : event_id})
@@ -246,12 +215,8 @@ def delete_participant():
 
 # Delete Participants in bulk
 @app.route('/participant/delete-batch', methods=['DELETE'])
+@authenticate
 def delete_participants():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     event_id = ObjectId(request.args.get('event_id'))
     db.participants.delete_many({"event_id" : event_id})
 
@@ -264,12 +229,8 @@ def delete_participants():
 ## PLUGIN
 
 @app.route("/plugin/gen-info", methods=['GET'])
+@authenticate
 def get_gen_info():
-    provided_key = request.headers.get("API-Auth-Key")
-    if provided_key != api_auth_key:
-        response = {"error": "Invalid API key"}
-        return make_response(json.dumps(response), 401)
-    
     event_id = ObjectId(request.args.get('event_id'))
 
     pipeline = [
