@@ -2,7 +2,11 @@ from bson import ObjectId
 import curses
 import requests
 
-url = "http://localhost:8000"
+url = "https://localhost:8000"
+
+# Create a custom session with verify=False
+session = requests.Session()
+session.verify = False
 
 def init(stdscr):
     curses.curs_set(False)
@@ -57,7 +61,7 @@ def main_screen(win):
                     win.addstr(y, x, "Invalid Event ID. Try again...")
                     y+=2
                 else:
-                    response = requests.get(f'{url}/event/info', params = {"event_id" : event_id})
+                    response = session.get(f'{url}/event/info', params = {"event_id" : event_id})
                     info = response.json()
                     
                     if info == None:
@@ -110,7 +114,7 @@ def main_screen(win):
                     win.addstr(y, x, "Invalid Participant ID. Try again...")
                     y+=2
                 else:
-                    response = requests.get(f'{url}/participant/info', params = {"event_id" : event_id , "participant_id" : participant_id})
+                    response = session.get(f'{url}/participant/info', params = {"event_id" : event_id , "participant_id" : participant_id})
                     info = response.json()
                     
                     win.clear()

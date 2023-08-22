@@ -3,8 +3,12 @@ import csv
 import requests
 from collections import Counter
 
-url = "http://localhost:8000"
+url = "https://localhost:8000"
 api_key = "random_key"
+
+# Create a custom session with verify=False
+session = requests.Session()
+session.verify = False
 
 def init(stdscr):
     # Hide the cursor
@@ -70,7 +74,7 @@ def main_screen(win): # View Events
     headers = {
         "API-Auth-Key": api_key
     }
-    response = requests.get(f'{url}/event/list', headers=headers)
+    response = session.get(f'{url}/event/list', headers=headers)
     if check_response(response, win) == 1: # if connected successfully
         events_list = response.json()
         selected_row_idx = 0 # initially select index
@@ -118,7 +122,7 @@ def main_screen(win): # View Events
                 headers = {
                     "API-Auth-Key": api_key
                 }
-                response = requests.get(f'{url}/event/list', headers = headers)
+                response = session.get(f'{url}/event/list', headers = headers)
                 if check_response(response, win) == 1:
                     events_list = response.json()
 
@@ -133,7 +137,7 @@ def main_screen(win): # View Events
                     headers = {
                         "API-Auth-Key": api_key
                     }
-                    response = requests.get(f'{url}/event/list', headers = headers)
+                    response = session.get(f'{url}/event/list', headers = headers)
                     if check_response(response, win) == 1:
                         events_list = response.json()
                         if selected_row_idx >= len(events_list):
@@ -174,7 +178,7 @@ def reg_event(win):
         "API-Auth-Key": api_key,
         "Content-Type": "application/json"
     }
-    response = requests.post(f'{url}/event/add', json = data, headers = headers)
+    response = session.post(f'{url}/event/add', json = data, headers = headers)
     win.clear()
     if check_response(response, win) == 1:
         win.addstr(0, 0, "Added Event Successfully | Press any key to continue...", curses.color_pair(3))
@@ -183,7 +187,7 @@ def reg_event(win):
 
 def view_event(win, event_id):
     print_loading_screen(win)
-    response = requests.get(f'{url}/event/info', params = {"event_id" : event_id})
+    response = session.get(f'{url}/event/info', params = {"event_id" : event_id})
     event_edited = False
 
     if check_response(response, win) == 1:
@@ -240,7 +244,7 @@ def view_event(win, event_id):
                             "API-Auth-Key": api_key,
                             "Content-Type": "application/json"
                         }
-                        response = requests.post(f'{url}/event/finalize', json = {"event_id" : event_id}, headers = headers)
+                        response = session.post(f'{url}/event/finalize', json = {"event_id" : event_id}, headers = headers)
                         if check_response(response, win) == 1:
                             finalized = True
                             menu_items[3][0] = f"Issue Date : {response.json()['issueDt']}"
@@ -277,7 +281,7 @@ def view_event(win, event_id):
                                 "API-Auth-Key": api_key,
                                 "Content-Type": "application/json"
                             }
-                            response = requests.post(f'{url}/event/update', json = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : fields_list}, headers = headers)
+                            response = session.post(f'{url}/event/update', json = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : fields_list}, headers = headers)
                         else:
                             win.addstr(y,x,"Enter New Value : ", curses.color_pair(2))
                             curses.curs_set(True)
@@ -290,7 +294,7 @@ def view_event(win, event_id):
                                 "API-Auth-Key": api_key,
                                 "Content-Type": "application/json"
                             }
-                            response = requests.post(f'{url}/event/update', json = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
+                            response = session.post(f'{url}/event/update', json = {"event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         if check_response(response, win) == 1:
                             event_edited = True #left to implement
                             y-=1
@@ -302,7 +306,7 @@ def view_event(win, event_id):
                             win.addstr(y,x,f"Event {menu_items[selected_index][2]} updated successfully | Press any key to continue...", curses.color_pair(3))
                             win.getch()
                             # db_result = db.events.find_one({"_id" : ObjectId(event_id)})  # possibility of this being executed before update
-                            response = requests.get(f'{url}/event/info', params = {"event_id" : event_id})
+                            response = session.get(f'{url}/event/info', params = {"event_id" : event_id})
                             if check_response(response, win) == 1:
                                 db_result = response.json()
                                 menu_items = [  [f"Event ID : {db_result['_id']}",False],
@@ -325,7 +329,7 @@ def view_event(win, event_id):
                         headers = {
                                 "API-Auth-Key": api_key,
                             }
-                        response = requests.delete(f'{url}/event/delete', params = {"event_id" : event_id}, headers = headers)
+                        response = session.delete(f'{url}/event/delete', params = {"event_id" : event_id}, headers = headers)
                         if check_response(response, win) == 1:
                             win.clear()
                             win.addstr(0, 0, "Event Deleted Successfully | Press any key to continue...", curses.color_pair(3))
@@ -344,7 +348,7 @@ def viewParticipants(win, event_id, finalized, fields):
     headers = {
         "API-Auth-Key": api_key,
     }
-    response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
+    response = session.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
     if check_response(response, win) == 1:
         participants_list = response.json()
         selected_row_idx = 0 # initially select index
@@ -407,7 +411,7 @@ def viewParticipants(win, event_id, finalized, fields):
                 headers = {
                     "API-Auth-Key": api_key
                 }
-                response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
+                response = session.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
                 if check_response(response, win) == 1:
                     participants_list = response.json()
 
@@ -418,7 +422,7 @@ def viewParticipants(win, event_id, finalized, fields):
                 headers = {
                     "API-Auth-Key": api_key
                 }
-                response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
+                response = session.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
                 if check_response(response, win) == 1:
                     participants_list = response.json()
 
@@ -429,7 +433,7 @@ def viewParticipants(win, event_id, finalized, fields):
                     headers = {
                         "API-Auth-Key": api_key
                     }
-                    response = requests.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
+                    response = session.get(f'{url}/participant/list', params = {"event_id" : event_id}, headers = headers)
                     if check_response(response, win) == 1:
                         participants_list = response.json()
                         if selected_row_idx >= len(participants_list):
@@ -449,7 +453,7 @@ def viewParticipants(win, event_id, finalized, fields):
                         headers = {
                             "API-Auth-Key": api_key
                         }
-                        response = requests.delete(f'{url}/participant/delete-batch', params = {"event_id" : event_id}, headers = headers)
+                        response = session.delete(f'{url}/participant/delete-batch', params = {"event_id" : event_id}, headers = headers)
                         if check_response(response, win) == 1:
                             win.clear()
                             win.addstr(0, 0, "Participants Deleted Successfully | Press any key to continue...", curses.color_pair(3))
@@ -478,7 +482,7 @@ def addParticipantCLI(win, event_id, fields):
     }
     request_body ={}
     request_body["items"] = [item]
-    response = requests.post(f'{url}/participant/add', json = request_body, headers = headers)
+    response = session.post(f'{url}/participant/add', json = request_body, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0, 0, "Participant added successfully | Press any key to continue...", curses.color_pair(3))
@@ -537,7 +541,7 @@ def addParticipantCSV(win, event_id, fields):
     }
     request_body ={}
     request_body["items"] = items
-    response = requests.post(f'{url}/participant/add', json = request_body, headers = headers)
+    response = session.post(f'{url}/participant/add', json = request_body, headers = headers)
     if check_response(response, win) == 1:
         win.clear()
         win.addstr(0,0,"Participants added successfully | Press any key to continue...", curses.color_pair(3))
@@ -545,7 +549,7 @@ def addParticipantCSV(win, event_id, fields):
 
 def viewParticipant(win, event_id, participant_id, finalized):
     print_loading_screen(win)
-    response = requests.get(f'{url}/participant/info', params = {"participant_id" : participant_id, "event_id" : event_id})
+    response = session.get(f'{url}/participant/info', params = {"participant_id" : participant_id, "event_id" : event_id})
     if check_response(response, win) == 1:
         db_result = response.json()
         selected_index = 0
@@ -612,11 +616,11 @@ def viewParticipant(win, event_id, participant_id, finalized):
                             "API-Auth-Key": api_key,
                             "Content-Type": "application/json"
                         }
-                        response = requests.post(f'{url}/participant/update', json = {"participant_id" : participant_id, "event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
+                        response = session.post(f'{url}/participant/update', json = {"participant_id" : participant_id, "event_id" : event_id, "field" : menu_items[selected_index][2], "value" : val}, headers = headers)
                         if check_response(response, win) == 1:
                             participant_is_edited = True
                             # db_result = db.participants.find_one({"_id" : ObjectId(participant_id), "event_id" : event_id})
-                            response = requests.get(f'{url}/participant/info', params = {"participant_id" : participant_id, "event_id" : event_id})
+                            response = session.get(f'{url}/participant/info', params = {"participant_id" : participant_id, "event_id" : event_id})
                             if check_response(response, win) == 1:
                                 db_result = response.json()
                                 menu_items = []
@@ -637,7 +641,7 @@ def viewParticipant(win, event_id, participant_id, finalized):
                         headers = {
                             "API-Auth-Key": api_key
                         }
-                        response = requests.delete(f'{url}/participant/delete', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
+                        response = session.delete(f'{url}/participant/delete', params = {"participant_id" : participant_id, "event_id" : event_id}, headers = headers)
                         if check_response(response, win) == 1:
                             participant_is_edited = True
                             break
