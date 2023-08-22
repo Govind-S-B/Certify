@@ -18,6 +18,8 @@ sudo apt-get update
 sudo apt-get install --reinstall ca-certificates
 ```
 
+Also Dont forget to add the user to docker group , dont run docker as sudo since it changes path for logs and other stuff https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user
+
 ## Clone the Repository
 
 Begin by cloning the Certify repository to your local machine:
