@@ -4,21 +4,30 @@ services:
   mongodb:
     image: mongo:6.0.9-rc0
     environment:
-      MONGO_INITDB_ROOT_USERNAME: your_mongo_username
-      MONGO_INITDB_ROOT_PASSWORD: your_mongo_password
-    ports:
-      - "27017:27017"
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ~/mongodb/data/db:/data/db
+      - ${HOME}/certify/mongodb/data/db:/data/db
 
   api_server:
-    image: your-registry-username/certify_api_server:latest
+    image: violetto96/certify_api_server:v0.1.0
     volumes:
-      - ~/certify/logs:~/certify/logs
+      - ${HOME}/certify/server_logs:${HOME}/certify/logs
+      - ${HOME}/certify/ssl:/app/ssl
     environment:
-      DB_USERNAME: your_mongo_username
-      DB_PASSWORD: your_mongo_password
-      API_AUTH_KEY: your_api_auth_key
-      GUNICORN_CMD_ARGS: "--access-logfile ~/certify/logs/gunicorn_access.log --error-logfile ~/certify/logs/gunicorn_error.log"
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      API_AUTH_KEY: ${API_AUTH_KEY}
+      GUNICORN_CMD_ARGS: "--access-logfile ${HOME}/certify/logs/gunicorn_access.log --error-logfile ${HOME}/certify/logs/gunicorn_error.log"
     ports:
       - "8000:8000"
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ${HOME}/certify/ssl:/etc/letsencrypt
+      - ${HOME}/certify/certbot:/var/lib/letsencrypt
+    environment:
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL}
+      - CERTBOT_DOMAIN=${CERTBOT_DOMAIN}
+    command: certbot certonly --webroot --webroot-path=/var/lib/letsencrypt --email ${CERTBOT_EMAIL} --agree-tos -d ${CERTBOT_DOMAIN}
