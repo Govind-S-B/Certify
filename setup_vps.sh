@@ -49,8 +49,14 @@ API_AUTH_KEY=$API_AUTH_KEY" > /home/$NEW_USER/.env
 echo "Downloading docker-compose.yml..."
 curl -o /home/$NEW_USER/docker-compose.yml https://raw.githubusercontent.com/Govind-S-B/Certify/main/docker-compose.yml
 
-# Add a cron job for certificate renewal
-(crontab -l ; echo "0 0 * * 0 docker-compose -f /home/$NEW_USER/docker-compose.yml exec certbot certbot renew --webroot --webroot-path=/var/lib/letsencrypt") | crontab -
+# Opening ports 8000 and 80
+sudo iptables -A INPUT -p tcp --dport 8000 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables-save | sudo tee /etc/iptables/rules.v4
+
+# Add a cron job for certificate renewal for the non-root user
+CRON_JOB="0 0 * * 0 docker-compose -f /home/$NEW_USER/docker-compose.yml exec certbot certbot renew --webroot --webroot-path=/var/lib/letsencrypt"
+(crontab -u $NEW_USER -l; echo "$CRON_JOB") | crontab -u $NEW_USER -
 
 # Finish setup
 echo "Setup complete!"
