@@ -55,7 +55,7 @@ sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 sudo iptables-save | sudo tee /etc/iptables/rules.v4
 
 # Add a cron job for certificate renewal for the non-root user
-CRON_JOB="0 0 * * 0 docker-compose -f /home/$NEW_USER/docker-compose.yml exec certbot certbot renew --webroot --webroot-path=/var/lib/letsencrypt"
+CRON_JOB="0 0 * * 0 docker-compose -f /home/$NEW_USER/docker-compose.yml exec certbot certbot renew --standalone"
 (crontab -u $NEW_USER -l; echo "$CRON_JOB") | crontab -u $NEW_USER -
 
 # Finish setup
