@@ -39,8 +39,8 @@ services:
       - CERTBOT_DOMAIN=${CERTBOT_DOMAIN}
     ports:
       - "80:80"  # Expose port 80 for HTTP challenge
-  command: >
-    sh -c "certbot certonly --standalone --email ${CERTBOT_EMAIL} --agree-tos -d ${CERTBOT_DOMAIN} --cert-name certbot &&
-          cp /etc/letsencrypt/live/certbot/privkey.pem /etc/letsencrypt/live/certbot/key.pem &&
-          cp /etc/letsencrypt/live/certbot/fullchain.pem /etc/letsencrypt/live/certbot/cert.pem &&
-          touch /var/lib/letsencrypt/certbot_completed"
+    command: >
+      sh -c "certbot certonly --standalone --preferred-challenges http --email ${CERTBOT_EMAIL} --agree-tos -d ${CERTBOT_DOMAIN} --cert-name certbot --non-interactive &&
+            cp /etc/letsencrypt/live/certbot/privkey.pem /etc/letsencrypt/live/certbot/key.pem &&
+            cp /etc/letsencrypt/live/certbot/fullchain.pem /etc/letsencrypt/live/certbot/cert.pem &&
+            touch /var/lib/letsencrypt/certbot_completed"
