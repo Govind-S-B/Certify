@@ -10,6 +10,7 @@ services:
       - ${HOME}/certify/mongodb/data/db:/data/db
 
   api_server:
+    # use image for stable version
     image: violetto96/certify_api_server:v0.1.0
     volumes:
       - ${HOME}/certify/server_logs:${HOME}/certify/logs
@@ -21,26 +22,3 @@ services:
       GUNICORN_CMD_ARGS: "--access-logfile ${HOME}/certify/logs/gunicorn_access.log --error-logfile ${HOME}/certify/logs/gunicorn_error.log"
     ports:
       - "8000:8000"
-    depends_on:
-      - certbot
-    command: >
-      sh -c "while [ ! -f /app/ssl/certbot/cert.pem ] || [ ! -f /app/ssl/certbot/key.pem ]; do
-               sleep 2
-             done
-             gunicorn -w 4 -b 0.0.0.0:8000 --certfile /app/ssl/certbot/cert.pem --keyfile /app/ssl/certbot/key.pem api_server:app"
-
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ${HOME}/certify/ssl:/etc/letsencrypt
-      - ${HOME}/certify/certbot:/var/lib/letsencrypt
-    environment:
-      - CERTBOT_EMAIL=${CERTBOT_EMAIL}
-      - CERTBOT_DOMAIN=${CERTBOT_DOMAIN}
-    ports:
-      - "80:80"  # Expose port 80 for HTTP challenge
-    command: >
-      sh -c "certbot certonly --standalone --preferred-challenges http --email ${CERTBOT_EMAIL} --agree-tos -d ${CERTBOT_DOMAIN} --cert-name certbot --non-interactive &&
-            cp /etc/letsencrypt/live/certbot/privkey.pem /etc/letsencrypt/live/certbot/key.pem &&
-            cp /etc/letsencrypt/live/certbot/fullchain.pem /etc/letsencrypt/live/certbot/cert.pem &&
-            touch /var/lib/letsencrypt/certbot_completed"

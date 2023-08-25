@@ -25,14 +25,3 @@ services:
       GUNICORN_CMD_ARGS: "--access-logfile ${HOME}/certify/logs/gunicorn_access.log --error-logfile ${HOME}/certify/logs/gunicorn_error.log"
     ports:
       - "8000:8000"
-
-  # dont use certbot if running locally with self signed , run gen_ssl_keys.sh instead and disable SSL validation for other components using this
-  # certbot:
-  #   image: certbot/certbot
-  #   volumes:
-  #     - ${HOME}/certify/ssl:/etc/letsencrypt
-  #     - ${HOME}/certify/certbot:/var/lib/letsencrypt
-  #   environment:
-  #     - CERTBOT_EMAIL=${CERTBOT_EMAIL}
-  #     - CERTBOT_DOMAIN=${CERTBOT_DOMAIN}
-  #   command: certbot certonly --webroot --webroot-path=/var/lib/letsencrypt --email ${CERTBOT_EMAIL} --agree-tos -d ${CERTBOT_DOMAIN}

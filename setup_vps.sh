@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check for privilege
+if [ "$EUID" -ne 0 ]; then
+    echo "This script requires root privileges. Please run it with sudo or as the root user."
+    exit 1
+fi
+
 # Set up non-root user
 read -p "Enter the username for the non-root user: " NEW_USER
 
@@ -20,7 +26,6 @@ if ! command -v docker &>/dev/null; then
     sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
     sudo apt update
     sudo apt install -y docker-ce
-    sudo systemctl status docker
     sudo systemctl enable docker.service
     sudo systemctl enable containerd.service
 fi
@@ -54,9 +59,23 @@ sudo iptables -A INPUT -p tcp --dport 8000 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 sudo iptables-save | sudo tee /etc/iptables/rules.v4
 
-# Add a cron job for certificate renewal for the non-root user
-CRON_JOB="0 0 * * 0 docker-compose -f /home/$NEW_USER/docker-compose.yml exec certbot certbot renew --standalone"
-(crontab -u $NEW_USER -l; echo "$CRON_JOB") | crontab -u $NEW_USER -
+# Install Certbot and generate certificates
+sudo apt update
+sudo apt install -y certbot
+
+sudo certbot certonly --standalone --preferred-challenges http --email $CERTBOT_EMAIL --agree-tos -d $CERTBOT_DOMAIN --cert-name certbot --non-interactive
+
+# Copy certificates to the appropriate location
+sudo mkdir -p /home/$NEW_USER/certify/ssl
+sudo cp /etc/letsencrypt/live/$CERTBOT_DOMAIN/fullchain.pem /home/$NEW_USER/certify/ssl/cert.pem
+sudo cp /etc/letsencrypt/live/$CERTBOT_DOMAIN/privkey.pem /home/$NEW_USER/certify/ssl/key.pem
+
+# Update permissions for the copied certificates
+sudo chown $NEW_USER:$NEW_USER /home/$NEW_USER/certify/ssl/cert.pem
+sudo chown $NEW_USER:$NEW_USER /home/$NEW_USER/certify/ssl/key.pem
+
+# Set up cron job for certificate renewal
+(sudo crontab -u $NEW_USER -l 2>/dev/null; echo "0 0 * * * /usr/bin/certbot renew --quiet && cp /etc/letsencrypt/live/$CERTBOT_DOMAIN/fullchain.pem /home/$NEW_USER/certify/ssl/cert.pem && cp /etc/letsencrypt/live/$CERTBOT_DOMAIN/privkey.pem /home/$NEW_USER/certify/ssl/key.pem && docker-compose -f /home/$NEW_USER/docker-compose.yml restart api_server") | sudo crontab -u $NEW_USER -
 
 # Finish setup
 echo "Setup complete!"
