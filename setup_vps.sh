@@ -63,7 +63,7 @@ sudo iptables-save | sudo tee /etc/iptables/rules.v4
 sudo apt update
 sudo apt install -y certbot
 
-sudo certbot certonly --standalone --preferred-challenges http --email $CERTBOT_EMAIL --agree-tos -d $CERTBOT_DOMAIN --cert-name certbot --non-interactive
+sudo certbot certonly --standalone --preferred-challenges http --email $CERTBOT_EMAIL --agree-tos -d $CERTBOT_DOMAIN --non-interactive
 
 # Copy certificates to the appropriate location
 sudo mkdir -p /home/$NEW_USER/certify/ssl
