@@ -68,7 +68,18 @@ def get_event_info():
 @app.route('/event/list', methods=['GET'])
 @authenticate
 def get_events_list():
-    query_result = list(db.events.find({},{"_id":1,"name":1,"issueDt":1}))
+    not_finalized = request.args.get('not_finalized')
+    search_string = request.args.get('search')
+
+    query = {}
+    if not_finalized and not_finalized.lower() == 'true':
+        query["issueDt"] = None
+
+    if search_string:
+        query["name"] = {"$regex": search_string, "$options": "i"}
+
+    query_result = list(db.events.find(query, {"_id": 1, "name": 1, "issueDt": 1}))
+
     r = make_response(json.dumps(query_result, cls=CustomJSONEncoder))
     r.headers['Content-Type'] = 'application/json'
     return r
