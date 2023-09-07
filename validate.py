@@ -6,7 +6,7 @@ url = "https://localhost:8000"
 
 # Create a custom session with verify=False
 session = requests.Session()
-session.verify = False
+session.verify = True # set this false if using self signed certs
 
 def init(stdscr):
     curses.curs_set(False)

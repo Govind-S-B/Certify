@@ -8,7 +8,7 @@ api_key = "random_key"
 
 # Create a custom session with verify=False
 session = requests.Session()
-session.verify = False
+session.verify = True # set this false if using self signed certs
 
 def init(stdscr):
     # Hide the cursor
