@@ -10,8 +10,6 @@ services:
       - ${HOME}/certify/mongodb/data/db:/data/db
 
   api_server:
-    # use image for stable version
-    # image: violetto96/certify_api_server:v0.1.0
     build:
       context: .
       dockerfile: Dockerfile
@@ -22,6 +20,6 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       API_AUTH_KEY: ${API_AUTH_KEY}
-      GUNICORN_CMD_ARGS: "--access-logfile ${HOME}/certify/logs/gunicorn_access.log --error-logfile ${HOME}/certify/logs/gunicorn_error.log"
+      GUNICORN_CMD_ARGS: "--access-logfile ${HOME}/certify/logs/gunicorn_access.log --error-logfile ${HOME}/certify/logs/gunicorn_error.log --certfile /app/ssl/cert.pem --keyfile /app/ssl/key.pem"
     ports:
       - "8000:8000"

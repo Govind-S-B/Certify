@@ -19,6 +19,6 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       API_AUTH_KEY: ${API_AUTH_KEY}
-      GUNICORN_CMD_ARGS: "--access-logfile ${HOME}/certify/logs/gunicorn_access.log --error-logfile ${HOME}/certify/logs/gunicorn_error.log"
+      GUNICORN_CMD_ARGS: "--access-logfile ${HOME}/certify/logs/gunicorn_access.log --error-logfile ${HOME}/certify/logs/gunicorn_error.log --certfile /app/ssl/cert.pem --keyfile /app/ssl/key.pem"
     ports:
       - "8000:8000"
